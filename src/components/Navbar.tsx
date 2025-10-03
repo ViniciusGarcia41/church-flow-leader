@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { DollarSign, LogOut, LayoutDashboard, Heart, CreditCard } from "lucide-react";
+import { DollarSign, LogOut, LayoutDashboard, Heart, CreditCard, Users, FileText } from "lucide-react";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -37,10 +37,22 @@ const Navbar = () => {
               Doações
             </Button>
           </Link>
+          <Link to="/donors">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <Users className="h-4 w-4" />
+              Doadores
+            </Button>
+          </Link>
           <Link to="/expenses">
             <Button variant="ghost" size="sm" className="gap-2">
               <CreditCard className="h-4 w-4" />
               Despesas
+            </Button>
+          </Link>
+          <Link to="/reports">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Relatórios
             </Button>
           </Link>
           <Button variant="outline" size="sm" onClick={handleSignOut} className="gap-2">

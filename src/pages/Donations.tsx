@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/Navbar";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import * as XLSX from "xlsx";
 
 interface Donation {
   id: string;
@@ -23,18 +25,42 @@ interface Donation {
   donors?: { name: string } | null;
 }
 
+interface Donor {
+  id: string;
+  name: string;
+}
+
 const Donations = () => {
   const { user } = useAuth();
   const [donations, setDonations] = useState<Donation[]>([]);
+  const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [selectedDonor, setSelectedDonor] = useState<string>("");
 
   useEffect(() => {
     if (user) {
       fetchDonations();
+      fetchDonors();
     }
   }, [user]);
+
+  const fetchDonors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("donors")
+        .select("id, name")
+        .eq("user_id", user?.id)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      setDonors(data || []);
+    } catch (error: any) {
+      console.error("Erro ao carregar doadores:", error.message);
+    }
+  };
 
   const fetchDonations = async () => {
     try {
@@ -65,6 +91,7 @@ const Donations = () => {
     const formData = new FormData(e.currentTarget);
     const donationData = {
       user_id: user?.id,
+      donor_id: selectedDonor || null,
       amount: parseFloat(formData.get("amount") as string),
       donation_type: formData.get("donation_type") as "tithe" | "offering" | "special_project" | "campaign",
       category: formData.get("category") as string || null,
@@ -80,6 +107,8 @@ const Donations = () => {
 
       toast.success("Doação cadastrada com sucesso!");
       setIsDialogOpen(false);
+      setSelectedDonor("");
+      setIsRecurring(false);
       fetchDonations();
       e.currentTarget.reset();
     } catch (error: any) {
@@ -129,6 +158,24 @@ const Donations = () => {
     return labels[type] || type;
   };
 
+  const exportToExcel = () => {
+    const data = donations.map((d) => ({
+      Data: formatDate(d.donation_date),
+      Tipo: getDonationTypeLabel(d.donation_type),
+      Valor: Number(d.amount),
+      Doador: d.donors?.name || "Anônimo",
+      Categoria: d.category || "",
+      "Forma de Pagamento": d.payment_method || "",
+      Observações: d.notes || "",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Doações");
+    XLSX.writeFile(wb, `doacoes-${new Date().toISOString().split("T")[0]}.xlsx`);
+    toast.success("Excel exportado com sucesso!");
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -148,18 +195,40 @@ const Donations = () => {
             <h1 className="text-4xl font-bold">Doações</h1>
             <p className="text-muted-foreground">Gerencie todas as doações recebidas</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nova Doação
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button onClick={exportToExcel} variant="outline" className="gap-2">
+              <FileDown className="h-4 w-4" />
+              Exportar Excel
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nova Doação
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Cadastrar Nova Doação</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="donor">Doador</Label>
+                  <Select value={selectedDonor} onValueChange={setSelectedDonor} disabled={isSubmitting}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um doador (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="anonymous">Anônimo</SelectItem>
+                      {donors.map((donor) => (
+                        <SelectItem key={donor.id} value={donor.id}>
+                          {donor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="amount">Valor *</Label>
@@ -236,12 +305,25 @@ const Donations = () => {
                   />
                 </div>
 
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="recurring"
+                    checked={isRecurring}
+                    onCheckedChange={(checked) => setIsRecurring(checked as boolean)}
+                    disabled={isSubmitting}
+                  />
+                  <Label htmlFor="recurring" className="text-sm font-normal cursor-pointer">
+                    Doação recorrente (mensal)
+                  </Label>
+                </div>
+
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? "Cadastrando..." : "Cadastrar Doação"}
                 </Button>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <Card className="bg-success-light border-success/20 shadow-md">
