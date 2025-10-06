@@ -91,7 +91,7 @@ const Donations = () => {
     const formData = new FormData(e.currentTarget);
     const donationData = {
       user_id: user?.id,
-      donor_id: selectedDonor || null,
+      donor_id: selectedDonor === "anonymous" || !selectedDonor ? null : selectedDonor,
       amount: parseFloat(formData.get("amount") as string),
       donation_type: formData.get("donation_type") as "tithe" | "offering" | "special_project" | "campaign",
       category: formData.get("category") as string || null,
