@@ -23,6 +23,7 @@ export type Database = {
           donation_type: Database["public"]["Enums"]["donation_type"]
           donor_id: string | null
           id: string
+          import_id: string | null
           notes: string | null
           payment_method: string | null
           updated_at: string
@@ -36,6 +37,7 @@ export type Database = {
           donation_type?: Database["public"]["Enums"]["donation_type"]
           donor_id?: string | null
           id?: string
+          import_id?: string | null
           notes?: string | null
           payment_method?: string | null
           updated_at?: string
@@ -49,6 +51,7 @@ export type Database = {
           donation_type?: Database["public"]["Enums"]["donation_type"]
           donor_id?: string | null
           id?: string
+          import_id?: string | null
           notes?: string | null
           payment_method?: string | null
           updated_at?: string
@@ -60,6 +63,13 @@ export type Database = {
             columns: ["donor_id"]
             isOneToOne: false
             referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donations_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "file_imports"
             referencedColumns: ["id"]
           },
           {
@@ -123,6 +133,7 @@ export type Database = {
           description: string
           expense_date: string
           id: string
+          import_id: string | null
           notes: string | null
           payment_method: string | null
           updated_at: string
@@ -136,6 +147,7 @@ export type Database = {
           description: string
           expense_date?: string
           id?: string
+          import_id?: string | null
           notes?: string | null
           payment_method?: string | null
           updated_at?: string
@@ -149,6 +161,7 @@ export type Database = {
           description?: string
           expense_date?: string
           id?: string
+          import_id?: string | null
           notes?: string | null
           payment_method?: string | null
           updated_at?: string
@@ -157,6 +170,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "expenses_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "file_imports"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "expenses_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -164,6 +184,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      file_imports: {
+        Row: {
+          created_at: string
+          error_log: Json | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          import_type: string
+          imported_data: Json | null
+          records_failed: number
+          records_imported: number
+          reverted_at: string | null
+          reverted_by: string | null
+          status: string
+          total_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_log?: Json | null
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          import_type: string
+          imported_data?: Json | null
+          records_failed?: number
+          records_imported?: number
+          reverted_at?: string | null
+          reverted_by?: string | null
+          status?: string
+          total_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_log?: Json | null
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          import_type?: string
+          imported_data?: Json | null
+          records_failed?: number
+          records_imported?: number
+          reverted_at?: string | null
+          reverted_by?: string | null
+          status?: string
+          total_amount?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

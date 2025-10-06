@@ -1,0 +1,514 @@
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
+import Navbar from "@/components/Navbar";
+import {
+  Upload,
+  FileSpreadsheet,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Eye,
+  Save,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { processFile, ParsedRecord, ParseResult } from "@/utils/fileProcessor";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const Import = () => {
+  const { user } = useAuth();
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [parseResult, setParseResult] = useState<ParseResult | null>(null);
+  const [editedRecords, setEditedRecords] = useState<ParsedRecord[]>([]);
+  const [step, setStep] = useState<"upload" | "preview" | "confirm">("upload");
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (selectedFile.size > maxSize) {
+        toast.error("Arquivo muito grande", {
+          description: "O arquivo deve ter no máximo 10MB",
+        });
+        return;
+      }
+      setFile(selectedFile);
+      setParseResult(null);
+      setStep("upload");
+    }
+  };
+
+  const handleProcessFile = async () => {
+    if (!file) return;
+
+    setLoading(true);
+    try {
+      const result = await processFile(file);
+      setParseResult(result);
+      setEditedRecords(result.records);
+      setStep("preview");
+
+      if (result.errors.length > 0) {
+        toast.warning("Alguns registros apresentaram erros", {
+          description: `${result.errors.length} linha(s) com problema(s)`,
+        });
+      } else {
+        toast.success("Arquivo processado com sucesso", {
+          description: `${result.records.length} registro(s) encontrado(s)`,
+        });
+      }
+    } catch (error: any) {
+      toast.error("Erro ao processar arquivo", {
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRecordChange = (
+    index: number,
+    field: keyof ParsedRecord,
+    value: any
+  ) => {
+    setEditedRecords((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleRemoveRecord = (index: number) => {
+    setEditedRecords((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleImport = async () => {
+    if (!parseResult || !file || !user) return;
+
+    setLoading(true);
+    try {
+      const donationsToInsert = editedRecords
+        .filter((r) => r.type === "income")
+        .map((r) => ({
+          user_id: user.id,
+          amount: r.amount,
+          donation_type: (r.category || "offering") as "tithe" | "offering" | "special_project" | "campaign",
+          donation_date: r.date,
+          notes: r.notes || r.description,
+          payment_method: r.paymentMethod,
+          category: r.category,
+        }));
+
+      const expensesToInsert = editedRecords
+        .filter((r) => r.type === "expense")
+        .map((r) => ({
+          user_id: user.id,
+          amount: r.amount,
+          category: (r.category || "other") as "maintenance" | "utilities" | "salaries" | "events" | "missions" | "supplies" | "other",
+          expense_date: r.date,
+          description: r.description,
+          payment_method: r.paymentMethod,
+          notes: r.notes,
+        }));
+
+      // Insert donations
+      let donationsInserted = 0;
+      if (donationsToInsert.length > 0) {
+        const { error: donationsError } = await supabase
+          .from("donations")
+          .insert(donationsToInsert);
+
+        if (donationsError) throw donationsError;
+        donationsInserted = donationsToInsert.length;
+      }
+
+      // Insert expenses
+      let expensesInserted = 0;
+      if (expensesToInsert.length > 0) {
+        const { error: expensesError } = await supabase
+          .from("expenses")
+          .insert(expensesToInsert);
+
+        if (expensesError) throw expensesError;
+        expensesInserted = expensesToInsert.length;
+      }
+
+      // Record import history
+      const totalAmount =
+        parseResult.totalIncome - parseResult.totalExpense;
+      const importType =
+        donationsInserted > 0 && expensesInserted > 0
+          ? "mixed"
+          : donationsInserted > 0
+          ? "donations"
+          : "expenses";
+
+      await supabase.from("file_imports").insert([{
+        user_id: user.id,
+        file_name: file.name,
+        file_type: file.type || "unknown",
+        file_size: file.size,
+        records_imported: editedRecords.length,
+        records_failed: parseResult.errors.length,
+        total_amount: totalAmount,
+        import_type: importType,
+        status: "completed",
+        error_log: parseResult.errors.length > 0 ? JSON.parse(JSON.stringify(parseResult.errors)) : null,
+        imported_data: JSON.parse(JSON.stringify(editedRecords)),
+      }]);
+
+      toast.success("Importação concluída com sucesso!", {
+        description: `${donationsInserted} receita(s) e ${expensesInserted} despesa(s) importadas`,
+      });
+
+      // Reset state
+      setFile(null);
+      setParseResult(null);
+      setEditedRecords([]);
+      setStep("upload");
+    } catch (error: any) {
+      toast.error("Erro ao importar dados", {
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      income: "Receita",
+      expense: "Despesa",
+      unknown: "Indefinido",
+    };
+    return labels[type] || type;
+  };
+
+  const getTypeBadgeVariant = (type: string) => {
+    if (type === "income") return "default";
+    if (type === "expense") return "destructive";
+    return "secondary";
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="container mx-auto p-6 space-y-8">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold">Importar Arquivos Financeiros</h1>
+          <p className="text-muted-foreground">
+            Importe extratos bancários, planilhas ou relatórios em Excel, CSV ou PDF
+          </p>
+        </div>
+
+        {step === "upload" && (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                Selecionar Arquivo
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="file">Arquivo (Excel, CSV ou PDF)</Label>
+                  <Input
+                    id="file"
+                    type="file"
+                    accept=".xlsx,.xls,.csv,.pdf"
+                    onChange={handleFileChange}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Formatos suportados: .xlsx, .xls, .csv, .pdf (máximo 10MB)
+                  </p>
+                </div>
+
+                {file && (
+                  <Alert>
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="space-y-1">
+                        <p className="font-semibold">{file.name}</p>
+                        <p className="text-sm">
+                          Tamanho: {(file.size / 1024).toFixed(2)} KB
+                        </p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  onClick={handleProcessFile}
+                  disabled={!file || loading}
+                  className="w-full"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Processar e Visualizar
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="border-t pt-6">
+                <h3 className="font-semibold mb-3">Como funciona:</h3>
+                <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+                  <li>Selecione um arquivo Excel, CSV ou PDF com seus lançamentos financeiros</li>
+                  <li>O sistema lerá automaticamente as colunas (Data, Descrição, Valor, etc.)</li>
+                  <li>Você poderá revisar e editar os dados antes de importar</li>
+                  <li>Os registros serão automaticamente classificados como receitas ou despesas</li>
+                  <li>Tudo será salvo no banco de dados e aparecerá nos relatórios</li>
+                </ol>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {step === "preview" && parseResult && (
+          <div className="space-y-6">
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    Visualizar Dados
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setStep("upload");
+                      setParseResult(null);
+                      setEditedRecords([]);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Total de Receitas
+                    </p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {formatCurrency(parseResult.totalIncome)}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {editedRecords.filter((r) => r.type === "income").length}{" "}
+                      registro(s)
+                    </p>
+                  </div>
+                  <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Total de Despesas
+                    </p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {formatCurrency(parseResult.totalExpense)}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {editedRecords.filter((r) => r.type === "expense").length}{" "}
+                      registro(s)
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Saldo</p>
+                    <p
+                      className={`text-2xl font-bold ${
+                        parseResult.totalIncome - parseResult.totalExpense >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {formatCurrency(
+                        parseResult.totalIncome - parseResult.totalExpense
+                      )}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {editedRecords.length} total de registros
+                    </p>
+                  </div>
+                </div>
+
+                {parseResult.errors.length > 0 && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      <p className="font-semibold mb-2">
+                        {parseResult.errors.length} erro(s) encontrado(s):
+                      </p>
+                      <ul className="text-sm space-y-1">
+                        {parseResult.errors.slice(0, 5).map((err, i) => (
+                          <li key={i}>
+                            Linha {err.row}: {err.message}
+                          </li>
+                        ))}
+                        {parseResult.errors.length > 5 && (
+                          <li>... e mais {parseResult.errors.length - 5}</li>
+                        )}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Valor</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {editedRecords.map((record, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Input
+                              type="date"
+                              value={record.date}
+                              onChange={(e) =>
+                                handleRecordChange(index, "date", e.target.value)
+                              }
+                              className="w-36"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={record.type}
+                              onValueChange={(value) =>
+                                handleRecordChange(index, "type", value)
+                              }
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="income">Receita</SelectItem>
+                                <SelectItem value="expense">Despesa</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={record.description}
+                              onChange={(e) =>
+                                handleRecordChange(
+                                  index,
+                                  "description",
+                                  e.target.value
+                                )
+                              }
+                              className="min-w-[200px]"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={record.amount}
+                              onChange={(e) =>
+                                handleRecordChange(
+                                  index,
+                                  "amount",
+                                  parseFloat(e.target.value)
+                                )
+                              }
+                              className="w-32"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={getTypeBadgeVariant(record.type)}>
+                              {record.category || "N/A"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveRecord(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="flex justify-end gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setStep("upload");
+                      setParseResult(null);
+                      setEditedRecords([]);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleImport} disabled={loading || editedRecords.length === 0}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Importando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Confirmar Importação ({editedRecords.length} registros)
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Import;

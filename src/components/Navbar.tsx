@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { DollarSign, LogOut, LayoutDashboard, Heart, CreditCard, Users, FileText } from "lucide-react";
+import { DollarSign, LogOut, LayoutDashboard, Heart, CreditCard, Users, FileText, Upload } from "lucide-react";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -53,6 +53,12 @@ const Navbar = () => {
             <Button variant="ghost" size="sm" className="gap-2">
               <FileText className="h-4 w-4" />
               Relatórios
+            </Button>
+          </Link>
+          <Link to="/import">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <Upload className="h-4 w-4" />
+              Importar
             </Button>
           </Link>
           <Button variant="outline" size="sm" onClick={handleSignOut} className="gap-2">

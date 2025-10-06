@@ -12,6 +12,7 @@ import Donations from "./pages/Donations";
 import Donors from "./pages/Donors";
 import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
+import Import from "./pages/Import";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/import"
+              element={
+                <ProtectedRoute>
+                  <Import />
                 </ProtectedRoute>
               }
             />
