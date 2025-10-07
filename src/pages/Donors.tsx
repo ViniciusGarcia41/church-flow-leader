@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/Navbar";
 import { Plus, Trash2, User, FileText } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ interface Donor {
 
 const Donors = () => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -46,7 +48,7 @@ const Donors = () => {
       if (error) throw error;
       setDonors(data || []);
     } catch (error: any) {
-      toast.error("Erro ao carregar doadores", {
+      toast.error(t("donors.loadError"), {
         description: error.message,
       });
     } finally {
@@ -73,12 +75,12 @@ const Donors = () => {
 
       if (error) throw error;
 
-      toast.success("Doador cadastrado com sucesso!");
+      toast.success(t("donors.success"));
       setIsDialogOpen(false);
       fetchDonors();
       e.currentTarget.reset();
     } catch (error: any) {
-      toast.error("Erro ao cadastrar doador", {
+      toast.error(t("donors.registerError"), {
         description: error.message,
       });
     } finally {
@@ -87,17 +89,17 @@ const Donors = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este doador?")) return;
+    if (!confirm(t("donors.deleteConfirm"))) return;
 
     try {
       const { error } = await supabase.from("donors").delete().eq("id", id);
 
       if (error) throw error;
 
-      toast.success("Doador excluído com sucesso!");
+      toast.success(t("donors.deleteSuccess"));
       fetchDonors();
     } catch (error: any) {
-      toast.error("Erro ao excluir doador", {
+      toast.error(t("donors.deleteError"), {
         description: error.message,
       });
     }
@@ -167,10 +169,10 @@ const Donors = () => {
         headStyles: { fillColor: [59, 130, 246] },
       });
 
-      doc.save(`recibo-${donor.name.replace(/\s+/g, "-")}-${new Date().getTime()}.pdf`);
-      toast.success("Recibo gerado com sucesso!");
+      doc.save(`receipt-${donor.name.replace(/\s+/g, "-")}-${new Date().getTime()}.pdf`);
+      toast.success(t("donors.receiptSuccess"));
     } catch (error: any) {
-      toast.error("Erro ao gerar recibo", {
+      toast.error(t("donors.receiptError"), {
         description: error.message,
       });
     }
@@ -179,7 +181,10 @@ const Donors = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <div className="text-center space-y-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
+        </div>
       </div>
     );
   }
@@ -190,28 +195,28 @@ const Donors = () => {
       <div className="container mx-auto p-6 space-y-8">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold">Doadores</h1>
-            <p className="text-muted-foreground">Gerencie o cadastro de doadores e membros</p>
+            <h1 className="text-4xl font-bold">{t("donors.title")}</h1>
+            <p className="text-muted-foreground">{t("donors.subtitle")}</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Novo Doador
+                {t("donors.new")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Cadastrar Novo Doador</DialogTitle>
+                <DialogTitle>{t("donors.newTitle")}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo *</Label>
+                  <Label htmlFor="name">{t("donors.name")} {t("common.required")}</Label>
                   <Input
                     id="name"
                     name="name"
                     type="text"
-                    placeholder="Nome do doador"
+                    placeholder={t("donors.name")}
                     required
                     disabled={isSubmitting}
                   />
@@ -219,51 +224,51 @@ const Donors = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
+                    <Label htmlFor="email">{t("donors.email")}</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="email@exemplo.com"
+                      placeholder={t("donors.emailPlaceholder")}
                       disabled={isSubmitting}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
+                    <Label htmlFor="phone">{t("donors.phone")}</Label>
                     <Input
                       id="phone"
                       name="phone"
                       type="tel"
-                      placeholder="(00) 00000-0000"
+                      placeholder={t("donors.phonePlaceholder")}
                       disabled={isSubmitting}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Endereço</Label>
+                  <Label htmlFor="address">{t("donors.address")}</Label>
                   <Input
                     id="address"
                     name="address"
                     type="text"
-                    placeholder="Endereço completo"
+                    placeholder={t("donors.addressPlaceholder")}
                     disabled={isSubmitting}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Observações</Label>
+                  <Label htmlFor="notes">{t("donors.notes")}</Label>
                   <Input
                     id="notes"
                     name="notes"
                     type="text"
-                    placeholder="Informações adicionais"
+                    placeholder={t("donors.notesPlaceholder")}
                     disabled={isSubmitting}
                   />
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Cadastrando..." : "Cadastrar Doador"}
+                  {isSubmitting ? t("donors.registering") : t("donors.register")}
                 </Button>
               </form>
             </DialogContent>
@@ -272,11 +277,11 @@ const Donors = () => {
 
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Lista de Doadores</CardTitle>
+            <CardTitle>{t("donors.list")}</CardTitle>
           </CardHeader>
           <CardContent>
             {donors.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">Nenhum doador cadastrado ainda</p>
+              <p className="text-center text-muted-foreground py-8">{t("donors.none")}</p>
             ) : (
               <div className="space-y-2">
                 {donors.map((donor) => (
@@ -304,7 +309,7 @@ const Donors = () => {
                         className="gap-2"
                       >
                         <FileText className="h-4 w-4" />
-                        Recibo
+                        {t("donors.receipt")}
                       </Button>
                       <Button
                         variant="ghost"

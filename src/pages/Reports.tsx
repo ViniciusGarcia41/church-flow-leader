@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/Navbar";
 import { FileDown, Calendar } from "lucide-react";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ interface ReportData {
 
 const Reports = () => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]
@@ -61,42 +63,30 @@ const Reports = () => {
         balance: totalDonations - totalExpenses,
       };
     } catch (error: any) {
-      toast.error("Erro ao buscar dados", { description: error.message });
+      toast.error(t("reports.loadError"), { description: error.message });
       return null;
     }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
+    return new Intl.NumberFormat(language === "pt" ? "pt-BR" : "en-US", {
       style: "currency",
-      currency: "BRL",
+      currency: language === "pt" ? "BRL" : "USD",
     }).format(value);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString + "T00:00:00").toLocaleDateString("pt-BR");
+    return new Date(dateString + "T00:00:00").toLocaleDateString(language === "pt" ? "pt-BR" : "en-US");
   };
 
   const getDonationTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      tithe: "Dízimo",
-      offering: "Oferta",
-      special_project: "Projeto Especial",
-      campaign: "Campanha",
-    };
-    return labels[type] || type;
+    const typeKey = `donations.types.${type}` as const;
+    return t(typeKey);
   };
 
   const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      maintenance: "Manutenção",
-      utilities: "Utilidades",
-      salaries: "Salários",
-      events: "Eventos",
-      missions: "Missões",
-      other: "Outros",
-    };
-    return labels[category] || category;
+    const categoryKey = `expenses.categories.${category}` as const;
+    return t(categoryKey);
   };
 
   const generatePDF = async () => {
@@ -150,7 +140,7 @@ const Reports = () => {
           formatDate(d.donation_date),
           getDonationTypeLabel(d.donation_type),
           formatCurrency(Number(d.amount)),
-          d.donors?.name || "Anônimo",
+          d.donors?.name || t("donations.anonymous"),
         ]),
         theme: "grid",
         headStyles: { fillColor: [59, 130, 246], textColor: 255 },
@@ -160,7 +150,7 @@ const Reports = () => {
       // Tabela de Despesas
       const finalY = (doc as any).lastAutoTable.finalY || 78;
       doc.setFont("helvetica", "bold");
-      doc.text("Despesas", 14, finalY + 15);
+      doc.text(t("nav.expenses"), 14, finalY + 15);
 
       autoTable(doc, {
         startY: finalY + 18,
@@ -194,10 +184,10 @@ const Reports = () => {
         );
       }
 
-      doc.save(`relatorio-financeiro-${startDate}-${endDate}.pdf`);
-      toast.success("PDF gerado com sucesso!");
+      doc.save(`financial-report-${startDate}-${endDate}.pdf`);
+      toast.success(t("reports.pdfSuccess"));
     } catch (error: any) {
-      toast.error("Erro ao gerar PDF", { description: error.message });
+      toast.error(t("reports.error"), { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -233,14 +223,14 @@ const Reports = () => {
           formatDate(d.donation_date),
           getDonationTypeLabel(d.donation_type),
           Number(d.amount),
-          d.donors?.name || "Anônimo",
+          d.donors?.name || t("donations.anonymous"),
           d.category || "",
           d.payment_method || "",
           d.notes || "",
         ]),
       ];
       const wsDonations = XLSX.utils.aoa_to_sheet(donationsData);
-      XLSX.utils.book_append_sheet(wb, wsDonations, "Receitas");
+      XLSX.utils.book_append_sheet(wb, wsDonations, t("nav.donations"));
 
       // Planilha de Despesas
       const expensesData = [
@@ -256,12 +246,12 @@ const Reports = () => {
         ]),
       ];
       const wsExpenses = XLSX.utils.aoa_to_sheet(expensesData);
-      XLSX.utils.book_append_sheet(wb, wsExpenses, "Despesas");
+      XLSX.utils.book_append_sheet(wb, wsExpenses, t("nav.expenses"));
 
-      XLSX.writeFile(wb, `relatorio-financeiro-${startDate}-${endDate}.xlsx`);
-      toast.success("Excel gerado com sucesso!");
+      XLSX.writeFile(wb, `financial-report-${startDate}-${endDate}.xlsx`);
+      toast.success(t("reports.excelSuccess"));
     } catch (error: any) {
-      toast.error("Erro ao gerar Excel", { description: error.message });
+      toast.error(t("reports.error"), { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -272,21 +262,21 @@ const Reports = () => {
       <Navbar />
       <div className="container mx-auto p-6 space-y-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">Relatórios Financeiros</h1>
-          <p className="text-muted-foreground">Gere relatórios detalhados das finanças da igreja</p>
+          <h1 className="text-4xl font-bold">{t("reports.title")}</h1>
+          <p className="text-muted-foreground">{t("reports.subtitle")}</p>
         </div>
 
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Selecionar Período
+              {t("reports.selectPeriod")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Data Inicial</Label>
+                <Label htmlFor="startDate">{t("reports.startDate")}</Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -295,7 +285,7 @@ const Reports = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">Data Final</Label>
+                <Label htmlFor="endDate">{t("reports.endDate")}</Label>
                 <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
               </div>
             </div>
@@ -303,11 +293,11 @@ const Reports = () => {
             <div className="flex flex-wrap gap-4">
               <Button onClick={generatePDF} disabled={loading} className="gap-2">
                 <FileDown className="h-4 w-4" />
-                {loading ? "Gerando..." : "Exportar PDF"}
+                {loading ? t("reports.generating") : t("reports.exportPDF")}
               </Button>
               <Button onClick={generateExcel} disabled={loading} variant="outline" className="gap-2">
                 <FileDown className="h-4 w-4" />
-                {loading ? "Gerando..." : "Exportar Excel"}
+                {loading ? t("reports.generating") : t("reports.exportExcel")}
               </Button>
             </div>
           </CardContent>
@@ -315,18 +305,16 @@ const Reports = () => {
 
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Sobre os Relatórios</CardTitle>
+            <CardTitle>{t("reports.about")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              <strong>PDF:</strong> Documento formatado e pronto para impressão, ideal para apresentações e
-              prestação de contas.
+              <strong>PDF:</strong> {t("reports.pdfDesc")}
             </p>
             <p>
-              <strong>Excel:</strong> Planilha com dados detalhados em múltiplas abas (Resumo, Receitas, Despesas)
-              para análises personalizadas.
+              <strong>Excel:</strong> {t("reports.excelDesc")}
             </p>
-            <p>Os relatórios incluem todas as transações do período selecionado com totalizadores e saldo final.</p>
+            <p>{t("reports.includesDesc")}</p>
           </CardContent>
         </Card>
       </div>

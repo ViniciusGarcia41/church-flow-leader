@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/Navbar";
 import {
   Upload,
@@ -38,6 +39,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Import = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
@@ -49,8 +51,8 @@ const Import = () => {
     if (selectedFile) {
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (selectedFile.size > maxSize) {
-        toast.error("Arquivo muito grande", {
-          description: "O arquivo deve ter no máximo 10MB",
+        toast.error(t("import.error"), {
+          description: "Max 10MB",
         });
         return;
       }
@@ -71,16 +73,16 @@ const Import = () => {
       setStep("preview");
 
       if (result.errors.length > 0) {
-        toast.warning("Alguns registros apresentaram erros", {
-          description: `${result.errors.length} linha(s) com problema(s)`,
+        toast.warning(t("import.error"), {
+          description: `${result.errors.length} ${t("import.with")} ${t("import.errors")}`,
         });
       } else {
-        toast.success("Arquivo processado com sucesso", {
-          description: `${result.records.length} registro(s) encontrado(s)`,
+        toast.success(t("import.processing"), {
+          description: `${result.records.length} ${t("import.records")}`,
         });
       }
     } catch (error: any) {
-      toast.error("Erro ao processar arquivo", {
+      toast.error(t("import.parseError"), {
         description: error.message,
       });
     } finally {
@@ -179,8 +181,8 @@ const Import = () => {
         imported_data: JSON.parse(JSON.stringify(editedRecords)),
       }]);
 
-      toast.success("Importação concluída com sucesso!", {
-        description: `${donationsInserted} receita(s) e ${expensesInserted} despesa(s) importadas`,
+      toast.success(t("import.success"), {
+        description: `${donationsInserted} ${t("import.imported")} + ${expensesInserted}`,
       });
 
       // Reset state
@@ -189,7 +191,7 @@ const Import = () => {
       setEditedRecords([]);
       setStep("upload");
     } catch (error: any) {
-      toast.error("Erro ao importar dados", {
+      toast.error(t("import.saveError"), {
         description: error.message,
       });
     } finally {
@@ -224,9 +226,9 @@ const Import = () => {
       <Navbar />
       <div className="container mx-auto p-6 space-y-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">Importar Arquivos Financeiros</h1>
+          <h1 className="text-4xl font-bold">{t("import.title")}</h1>
           <p className="text-muted-foreground">
-            Importe extratos bancários, planilhas ou relatórios em Excel, CSV ou PDF
+            {t("import.subtitle")}
           </p>
         </div>
 
@@ -235,13 +237,13 @@ const Import = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="h-5 w-5" />
-                Selecionar Arquivo
+                {t("import.upload")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="file">Arquivo (Excel, CSV ou PDF)</Label>
+                  <Label htmlFor="file">{t("import.supported")}</Label>
                   <Input
                     id="file"
                     type="file"
@@ -249,7 +251,7 @@ const Import = () => {
                     onChange={handleFileChange}
                   />
                   <p className="text-sm text-muted-foreground">
-                    Formatos suportados: .xlsx, .xls, .csv, .pdf (máximo 10MB)
+                    {t("import.supported")}
                   </p>
                 </div>
 
@@ -318,7 +320,7 @@ const Import = () => {
                       setEditedRecords([]);
                     }}
                   >
-                    Cancelar
+                    {t("import.upload")}
                   </Button>
                 </CardTitle>
               </CardHeader>
@@ -486,18 +488,18 @@ const Import = () => {
                       setEditedRecords([]);
                     }}
                   >
-                    Cancelar
+                    {t("import.upload")}
                   </Button>
                   <Button onClick={handleImport} disabled={loading || editedRecords.length === 0}>
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Importando...
+                        {t("import.confirming")}
                       </>
                     ) : (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        Confirmar Importação ({editedRecords.length} registros)
+                        {t("import.confirm")} ({editedRecords.length} {t("import.records")})
                       </>
                     )}
                   </Button>

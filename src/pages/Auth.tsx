@@ -6,12 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { DollarSign } from "lucide-react";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp, user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   // Redirect if already logged in
@@ -31,7 +33,7 @@ const Auth = () => {
     const { error } = await signIn(email, password);
 
     if (error) {
-      toast.error("Erro ao fazer login", {
+      toast.error(t("auth.signinError"), {
         description: error.message,
       });
     }
@@ -50,13 +52,13 @@ const Auth = () => {
     const confirmPassword = formData.get("confirm-password") as string;
 
     if (password !== confirmPassword) {
-      toast.error("Senhas não coincidem");
+      toast.error(t("auth.passwordMismatch"));
       setIsLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
+      toast.error(t("auth.passwordLength"));
       setIsLoading(false);
       return;
     }
@@ -64,12 +66,12 @@ const Auth = () => {
     const { error } = await signUp(email, password, fullName);
 
     if (error) {
-      toast.error("Erro ao criar conta", {
+      toast.error(t("auth.signupError"), {
         description: error.message,
       });
     } else {
-      toast.success("Conta criada com sucesso!", {
-        description: "Você será redirecionado automaticamente.",
+      toast.success(t("auth.signupSuccess"), {
+        description: t("auth.signupSuccessDesc"),
       });
     }
 
@@ -86,32 +88,32 @@ const Auth = () => {
           <div className="space-y-2">
             <CardTitle className="text-3xl font-bold">ChurchLedger</CardTitle>
             <CardDescription className="text-base">
-              Gestão financeira completa para sua igreja
+              {t("auth.subtitle")}
             </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              <TabsTrigger value="signin">{t("auth.signin")}</TabsTrigger>
+              <TabsTrigger value="signup">{t("auth.signup")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
+                  <Label htmlFor="email">{t("auth.email")}</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="seu@email.com"
+                    placeholder={t("auth.emailPlaceholder")}
                     required
                     disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Senha</Label>
+                  <Label htmlFor="password">{t("auth.password")}</Label>
                   <Input
                     id="password"
                     name="password"
@@ -122,7 +124,7 @@ const Auth = () => {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Entrando..." : "Entrar"}
+                  {isLoading ? t("auth.signingIn") : t("auth.signinButton")}
                 </Button>
               </form>
             </TabsContent>
@@ -130,29 +132,29 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="full-name">Nome Completo</Label>
+                  <Label htmlFor="full-name">{t("auth.fullName")}</Label>
                   <Input
                     id="full-name"
                     name="full-name"
                     type="text"
-                    placeholder="Seu nome"
+                    placeholder={t("auth.fullNamePlaceholder")}
                     required
                     disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">E-mail</Label>
+                  <Label htmlFor="signup-email">{t("auth.email")}</Label>
                   <Input
                     id="signup-email"
                     name="signup-email"
                     type="email"
-                    placeholder="seu@email.com"
+                    placeholder={t("auth.emailPlaceholder")}
                     required
                     disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Senha</Label>
+                  <Label htmlFor="signup-password">{t("auth.password")}</Label>
                   <Input
                     id="signup-password"
                     name="signup-password"
@@ -163,7 +165,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                  <Label htmlFor="confirm-password">{t("auth.confirmPassword")}</Label>
                   <Input
                     id="confirm-password"
                     name="confirm-password"
@@ -174,7 +176,7 @@ const Auth = () => {
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Criando conta..." : "Criar conta"}
+                  {isLoading ? t("auth.signingUp") : t("auth.signupButton")}
                 </Button>
               </form>
             </TabsContent>

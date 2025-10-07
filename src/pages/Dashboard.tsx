@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/Navbar";
 import { DollarSign, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ interface FinancialSummary {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [summary, setSummary] = useState<FinancialSummary>({
     totalDonations: 0,
     totalExpenses: 0,
@@ -72,7 +74,7 @@ const Dashboard = () => {
         expensesThisMonth,
       });
     } catch (error: any) {
-      toast.error("Erro ao carregar dados", {
+      toast.error(t("dashboard.loadError"), {
         description: error.message,
       });
     } finally {
@@ -81,16 +83,19 @@ const Dashboard = () => {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
+    return new Intl.NumberFormat(language === "pt" ? "pt-BR" : "en-US", {
       style: "currency",
-      currency: "BRL",
+      currency: language === "pt" ? "BRL" : "USD",
     }).format(value);
   };
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <div className="text-center space-y-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
+        </div>
       </div>
     );
   }
@@ -100,53 +105,53 @@ const Dashboard = () => {
       <Navbar />
       <div className="container mx-auto p-6 space-y-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">Dashboard Financeiro</h1>
-          <p className="text-muted-foreground">Visão geral das finanças da sua igreja</p>
+          <h1 className="text-4xl font-bold">{t("dashboard.title")}</h1>
+          <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-gradient-card shadow-lg border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Saldo Total</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("dashboard.totalBalance")}</CardTitle>
               <Wallet className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(summary.balance)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Receitas - Despesas
+                {t("dashboard.totalBalanceDesc")}
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-success-light border-success/20 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Doações (Total)</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("dashboard.donationsTotal")}</CardTitle>
               <TrendingUp className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-success">{formatCurrency(summary.totalDonations)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Acumulado geral
+                {t("dashboard.accumulatedTotal")}
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-destructive-light border-destructive/20 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Despesas (Total)</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("dashboard.expensesTotal")}</CardTitle>
               <TrendingDown className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">{formatCurrency(summary.totalExpenses)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Acumulado geral
+                {t("dashboard.accumulatedTotal")}
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-gradient-primary text-primary-foreground shadow-lg border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Saldo do Mês</CardTitle>
+              <CardTitle className="text-sm font-medium">{t("dashboard.monthBalance")}</CardTitle>
               <DollarSign className="h-4 w-4" />
             </CardHeader>
             <CardContent>
@@ -162,14 +167,14 @@ const Dashboard = () => {
 
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Resumo Mensal</CardTitle>
+            <CardTitle>{t("dashboard.monthlySummary")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 rounded-lg bg-success-light">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Doações este mês</p>
-                  <p className="text-xs text-muted-foreground">Receitas do mês atual</p>
+                  <p className="text-sm font-medium">{t("dashboard.donationsThisMonth")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.monthRevenue")}</p>
                 </div>
                 <p className="text-xl font-bold text-success">
                   {formatCurrency(summary.donationsThisMonth)}
@@ -177,8 +182,8 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center justify-between p-4 rounded-lg bg-destructive-light">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Despesas este mês</p>
-                  <p className="text-xs text-muted-foreground">Gastos do mês atual</p>
+                  <p className="text-sm font-medium">{t("dashboard.expensesThisMonth")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.monthExpenses")}</p>
                 </div>
                 <p className="text-xl font-bold text-destructive">
                   {formatCurrency(summary.expensesThisMonth)}

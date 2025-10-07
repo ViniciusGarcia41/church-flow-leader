@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/Navbar";
 import { Plus, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +33,7 @@ interface Donor {
 
 const Donations = () => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +78,7 @@ const Donations = () => {
       if (error) throw error;
       setDonations(data || []);
     } catch (error: any) {
-      toast.error("Erro ao carregar doações", {
+      toast.error(t("donations.loadError"), {
         description: error.message,
       });
     } finally {
@@ -105,14 +107,14 @@ const Donations = () => {
 
       if (error) throw error;
 
-      toast.success("Doação cadastrada com sucesso!");
+      toast.success(t("donations.success"));
       setIsDialogOpen(false);
       setSelectedDonor("");
       setIsRecurring(false);
       fetchDonations();
       e.currentTarget.reset();
     } catch (error: any) {
-      toast.error("Erro ao cadastrar doação", {
+      toast.error(t("donations.registerError"), {
         description: error.message,
       });
     } finally {
@@ -121,65 +123,63 @@ const Donations = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta doação?")) return;
+    if (!confirm(t("donations.deleteConfirm"))) return;
 
     try {
       const { error } = await supabase.from("donations").delete().eq("id", id);
 
       if (error) throw error;
 
-      toast.success("Doação excluída com sucesso!");
+      toast.success(t("donations.deleteSuccess"));
       fetchDonations();
     } catch (error: any) {
-      toast.error("Erro ao excluir doação", {
+      toast.error(t("donations.deleteError"), {
         description: error.message,
       });
     }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
+    return new Intl.NumberFormat(language === "pt" ? "pt-BR" : "en-US", {
       style: "currency",
-      currency: "BRL",
+      currency: language === "pt" ? "BRL" : "USD",
     }).format(value);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString + "T00:00:00").toLocaleDateString("pt-BR");
+    return new Date(dateString + "T00:00:00").toLocaleDateString(language === "pt" ? "pt-BR" : "en-US");
   };
 
   const getDonationTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      tithe: "Dízimo",
-      offering: "Oferta",
-      special_project: "Projeto Especial",
-      campaign: "Campanha",
-    };
-    return labels[type] || type;
+    const typeKey = `donations.types.${type}` as const;
+    return t(typeKey);
   };
 
   const exportToExcel = () => {
     const data = donations.map((d) => ({
-      Data: formatDate(d.donation_date),
-      Tipo: getDonationTypeLabel(d.donation_type),
-      Valor: Number(d.amount),
-      Doador: d.donors?.name || "Anônimo",
-      Categoria: d.category || "",
-      "Forma de Pagamento": d.payment_method || "",
-      Observações: d.notes || "",
+      [t("donations.date")]: formatDate(d.donation_date),
+      [t("donations.type")]: getDonationTypeLabel(d.donation_type),
+      [t("donations.amount")]: Number(d.amount),
+      [t("donations.donor")]: d.donors?.name || t("donations.anonymous"),
+      [t("donations.category")]: d.category || "",
+      [t("donations.paymentMethod")]: d.payment_method || "",
+      [t("donations.notes")]: d.notes || "",
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Doações");
-    XLSX.writeFile(wb, `doacoes-${new Date().toISOString().split("T")[0]}.xlsx`);
-    toast.success("Excel exportado com sucesso!");
+    XLSX.utils.book_append_sheet(wb, ws, t("nav.donations"));
+    XLSX.writeFile(wb, `donations-${new Date().toISOString().split("T")[0]}.xlsx`);
+    toast.success(t("donations.exportSuccess"));
   };
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <div className="text-center space-y-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
+        </div>
       </div>
     );
   }
@@ -192,34 +192,34 @@ const Donations = () => {
       <div className="container mx-auto p-6 space-y-8">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold">Doações</h1>
-            <p className="text-muted-foreground">Gerencie todas as doações recebidas</p>
+            <h1 className="text-4xl font-bold">{t("donations.title")}</h1>
+            <p className="text-muted-foreground">{t("donations.subtitle")}</p>
           </div>
           <div className="flex gap-2">
             <Button onClick={exportToExcel} variant="outline" className="gap-2">
               <FileDown className="h-4 w-4" />
-              Exportar Excel
+              {t("donations.exportExcel")}
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
                   <Plus className="h-4 w-4" />
-                  Nova Doação
+                  {t("donations.new")}
                 </Button>
               </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Cadastrar Nova Doação</DialogTitle>
+                <DialogTitle>{t("donations.newTitle")}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="donor">Doador</Label>
+                  <Label htmlFor="donor">{t("donations.donor")}</Label>
                   <Select value={selectedDonor} onValueChange={setSelectedDonor} disabled={isSubmitting}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um doador (opcional)" />
+                      <SelectValue placeholder={t("donations.selectDonor")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="anonymous">Anônimo</SelectItem>
+                      <SelectItem value="anonymous">{t("donations.anonymous")}</SelectItem>
                       {donors.map((donor) => (
                         <SelectItem key={donor.id} value={donor.id}>
                           {donor.name}
@@ -231,20 +231,20 @@ const Donations = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Valor *</Label>
+                    <Label htmlFor="amount">{t("donations.amount")} {t("common.required")}</Label>
                     <Input
                       id="amount"
                       name="amount"
                       type="number"
                       step="0.01"
                       min="0.01"
-                      placeholder="0,00"
+                      placeholder="0.00"
                       required
                       disabled={isSubmitting}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="donation_date">Data *</Label>
+                    <Label htmlFor="donation_date">{t("donations.date")} {t("common.required")}</Label>
                     <Input
                       id="donation_date"
                       name="donation_date"
@@ -258,49 +258,49 @@ const Donations = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="donation_type">Tipo *</Label>
+                    <Label htmlFor="donation_type">{t("donations.type")} {t("common.required")}</Label>
                     <Select name="donation_type" defaultValue="offering" required disabled={isSubmitting}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="tithe">Dízimo</SelectItem>
-                        <SelectItem value="offering">Oferta</SelectItem>
-                        <SelectItem value="special_project">Projeto Especial</SelectItem>
-                        <SelectItem value="campaign">Campanha</SelectItem>
+                        <SelectItem value="tithe">{t("donations.types.tithe")}</SelectItem>
+                        <SelectItem value="offering">{t("donations.types.offering")}</SelectItem>
+                        <SelectItem value="special_project">{t("donations.types.special_project")}</SelectItem>
+                        <SelectItem value="campaign">{t("donations.types.campaign")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="payment_method">Forma de Pagamento</Label>
+                    <Label htmlFor="payment_method">{t("donations.paymentMethod")}</Label>
                     <Input
                       id="payment_method"
                       name="payment_method"
                       type="text"
-                      placeholder="Ex: Dinheiro, PIX, Cartão"
+                      placeholder={t("common.paymentMethodPlaceholder")}
                       disabled={isSubmitting}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="category">Categoria / Projeto</Label>
+                  <Label htmlFor="category">{t("donations.category")}</Label>
                   <Input
                     id="category"
                     name="category"
                     type="text"
-                    placeholder="Ex: Construção, Missões"
+                    placeholder={t("donations.categoryPlaceholder")}
                     disabled={isSubmitting}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Observações</Label>
+                  <Label htmlFor="notes">{t("donations.notes")}</Label>
                   <Input
                     id="notes"
                     name="notes"
                     type="text"
-                    placeholder="Informações adicionais"
+                    placeholder={t("donations.notesPlaceholder")}
                     disabled={isSubmitting}
                   />
                 </div>
@@ -313,12 +313,12 @@ const Donations = () => {
                     disabled={isSubmitting}
                   />
                   <Label htmlFor="recurring" className="text-sm font-normal cursor-pointer">
-                    Doação recorrente (mensal)
+                    {t("donations.recurring")}
                   </Label>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Cadastrando..." : "Cadastrar Doação"}
+                  {isSubmitting ? t("donations.registering") : t("donations.register")}
                 </Button>
               </form>
             </DialogContent>
@@ -328,7 +328,7 @@ const Donations = () => {
 
         <Card className="bg-success-light border-success/20 shadow-md">
           <CardHeader>
-            <CardTitle className="text-success">Total de Doações</CardTitle>
+            <CardTitle className="text-success">{t("donations.total")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-bold text-success">{formatCurrency(totalDonations)}</p>
@@ -337,12 +337,12 @@ const Donations = () => {
 
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Histórico de Doações</CardTitle>
+            <CardTitle>{t("donations.history")}</CardTitle>
           </CardHeader>
           <CardContent>
             {donations.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                Nenhuma doação cadastrada ainda
+                {t("donations.none")}
               </p>
             ) : (
               <div className="space-y-2">

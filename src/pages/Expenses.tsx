@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/Navbar";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ interface Expense {
 
 const Expenses = () => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -46,7 +48,7 @@ const Expenses = () => {
       if (error) throw error;
       setExpenses(data || []);
     } catch (error: any) {
-      toast.error("Erro ao carregar despesas", {
+      toast.error(t("expenses.loadError"), {
         description: error.message,
       });
     } finally {
@@ -75,12 +77,12 @@ const Expenses = () => {
 
       if (error) throw error;
 
-      toast.success("Despesa cadastrada com sucesso!");
+      toast.success(t("expenses.success"));
       setIsDialogOpen(false);
       fetchExpenses();
       e.currentTarget.reset();
     } catch (error: any) {
-      toast.error("Erro ao cadastrar despesa", {
+      toast.error(t("expenses.registerError"), {
         description: error.message,
       });
     } finally {
@@ -89,50 +91,45 @@ const Expenses = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta despesa?")) return;
+    if (!confirm(t("expenses.deleteConfirm"))) return;
 
     try {
       const { error } = await supabase.from("expenses").delete().eq("id", id);
 
       if (error) throw error;
 
-      toast.success("Despesa excluída com sucesso!");
+      toast.success(t("expenses.deleteSuccess"));
       fetchExpenses();
     } catch (error: any) {
-      toast.error("Erro ao excluir despesa", {
+      toast.error(t("expenses.deleteError"), {
         description: error.message,
       });
     }
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
+    return new Intl.NumberFormat(language === "pt" ? "pt-BR" : "en-US", {
       style: "currency",
-      currency: "BRL",
+      currency: language === "pt" ? "BRL" : "USD",
     }).format(value);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString + "T00:00:00").toLocaleDateString("pt-BR");
+    return new Date(dateString + "T00:00:00").toLocaleDateString(language === "pt" ? "pt-BR" : "en-US");
   };
 
   const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      salaries: "Salários",
-      utilities: "Utilidades",
-      maintenance: "Manutenção",
-      missions: "Missões",
-      events: "Eventos",
-      supplies: "Materiais",
-      other: "Outros",
-    };
-    return labels[category] || category;
+    const categoryKey = `expenses.categories.${category}` as const;
+    return t(categoryKey);
   };
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <div className="text-center space-y-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
+        </div>
       </div>
     );
   }
@@ -145,37 +142,37 @@ const Expenses = () => {
       <div className="container mx-auto p-6 space-y-8">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold">Despesas</h1>
-            <p className="text-muted-foreground">Gerencie todas as despesas da igreja</p>
+            <h1 className="text-4xl font-bold">{t("expenses.title")}</h1>
+            <p className="text-muted-foreground">{t("expenses.subtitle")}</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Nova Despesa
+                {t("expenses.new")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
-                <DialogTitle>Cadastrar Nova Despesa</DialogTitle>
+                <DialogTitle>{t("expenses.newTitle")}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Valor *</Label>
+                    <Label htmlFor="amount">{t("expenses.amount")} {t("common.required")}</Label>
                     <Input
                       id="amount"
                       name="amount"
                       type="number"
                       step="0.01"
                       min="0.01"
-                      placeholder="0,00"
+                      placeholder="0.00"
                       required
                       disabled={isSubmitting}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="expense_date">Data *</Label>
+                    <Label htmlFor="expense_date">{t("expenses.date")} {t("common.required")}</Label>
                     <Input
                       id="expense_date"
                       name="expense_date"
@@ -188,12 +185,12 @@ const Expenses = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Descrição *</Label>
+                  <Label htmlFor="description">{t("expenses.description")} {t("common.required")}</Label>
                   <Input
                     id="description"
                     name="description"
                     type="text"
-                    placeholder="Ex: Conta de luz"
+                    placeholder={t("expenses.descriptionPlaceholder")}
                     required
                     disabled={isSubmitting}
                   />
@@ -201,58 +198,58 @@ const Expenses = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="category">Categoria *</Label>
+                    <Label htmlFor="category">{t("expenses.category")} {t("common.required")}</Label>
                     <Select name="category" defaultValue="other" required disabled={isSubmitting}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="salaries">Salários</SelectItem>
-                        <SelectItem value="utilities">Utilidades</SelectItem>
-                        <SelectItem value="maintenance">Manutenção</SelectItem>
-                        <SelectItem value="missions">Missões</SelectItem>
-                        <SelectItem value="events">Eventos</SelectItem>
-                        <SelectItem value="supplies">Materiais</SelectItem>
-                        <SelectItem value="other">Outros</SelectItem>
+                        <SelectItem value="salaries">{t("expenses.categories.salaries")}</SelectItem>
+                        <SelectItem value="utilities">{t("expenses.categories.utilities")}</SelectItem>
+                        <SelectItem value="maintenance">{t("expenses.categories.maintenance")}</SelectItem>
+                        <SelectItem value="missions">{t("expenses.categories.missions")}</SelectItem>
+                        <SelectItem value="events">{t("expenses.categories.events")}</SelectItem>
+                        <SelectItem value="supplies">{t("expenses.categories.supplies")}</SelectItem>
+                        <SelectItem value="other">{t("expenses.categories.other")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="payment_method">Forma de Pagamento</Label>
+                    <Label htmlFor="payment_method">{t("expenses.paymentMethod")}</Label>
                     <Input
                       id="payment_method"
                       name="payment_method"
                       type="text"
-                      placeholder="Ex: Dinheiro, PIX, Cartão"
+                      placeholder={t("common.paymentMethodPlaceholder")}
                       disabled={isSubmitting}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="vendor">Fornecedor</Label>
+                  <Label htmlFor="vendor">{t("expenses.vendor")}</Label>
                   <Input
                     id="vendor"
                     name="vendor"
                     type="text"
-                    placeholder="Nome do fornecedor"
+                    placeholder={t("expenses.vendorPlaceholder")}
                     disabled={isSubmitting}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Observações</Label>
+                  <Label htmlFor="notes">{t("expenses.notes")}</Label>
                   <Input
                     id="notes"
                     name="notes"
                     type="text"
-                    placeholder="Informações adicionais"
+                    placeholder={t("expenses.notesPlaceholder")}
                     disabled={isSubmitting}
                   />
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Cadastrando..." : "Cadastrar Despesa"}
+                  {isSubmitting ? t("expenses.registering") : t("expenses.register")}
                 </Button>
               </form>
             </DialogContent>
@@ -261,7 +258,7 @@ const Expenses = () => {
 
         <Card className="bg-destructive-light border-destructive/20 shadow-md">
           <CardHeader>
-            <CardTitle className="text-destructive">Total de Despesas</CardTitle>
+            <CardTitle className="text-destructive">{t("expenses.total")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-4xl font-bold text-destructive">{formatCurrency(totalExpenses)}</p>
@@ -270,12 +267,12 @@ const Expenses = () => {
 
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Histórico de Despesas</CardTitle>
+            <CardTitle>{t("expenses.history")}</CardTitle>
           </CardHeader>
           <CardContent>
             {expenses.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                Nenhuma despesa cadastrada ainda
+                {t("expenses.none")}
               </p>
             ) : (
               <div className="space-y-2">
