@@ -1,10 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { DollarSign, LogOut, LayoutDashboard, Heart, CreditCard, Users, FileText, Upload } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { DollarSign, LogOut, LayoutDashboard, Heart, CreditCard, Users, FileText, Upload, Languages } from "lucide-react";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
+  const { t, toggleLanguage } = useLanguage();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -28,42 +30,46 @@ const Navbar = () => {
           <Link to="/dashboard">
             <Button variant="ghost" size="sm" className="gap-2">
               <LayoutDashboard className="h-4 w-4" />
-              Dashboard
+              {t("nav.dashboard")}
             </Button>
           </Link>
           <Link to="/donations">
             <Button variant="ghost" size="sm" className="gap-2">
               <Heart className="h-4 w-4" />
-              Doações
+              {t("nav.donations")}
             </Button>
           </Link>
           <Link to="/donors">
             <Button variant="ghost" size="sm" className="gap-2">
               <Users className="h-4 w-4" />
-              Doadores
+              {t("nav.donors")}
             </Button>
           </Link>
           <Link to="/expenses">
             <Button variant="ghost" size="sm" className="gap-2">
               <CreditCard className="h-4 w-4" />
-              Despesas
+              {t("nav.expenses")}
             </Button>
           </Link>
           <Link to="/reports">
             <Button variant="ghost" size="sm" className="gap-2">
               <FileText className="h-4 w-4" />
-              Relatórios
+              {t("nav.reports")}
             </Button>
           </Link>
           <Link to="/import">
             <Button variant="ghost" size="sm" className="gap-2">
               <Upload className="h-4 w-4" />
-              Importar
+              {t("nav.import")}
             </Button>
           </Link>
+          <Button variant="ghost" size="sm" onClick={toggleLanguage} className="gap-2">
+            <Languages className="h-4 w-4" />
+            {t("nav.language")}
+          </Button>
           <Button variant="outline" size="sm" onClick={handleSignOut} className="gap-2">
             <LogOut className="h-4 w-4" />
-            Sair
+            {t("nav.signout")}
           </Button>
         </div>
       </div>
