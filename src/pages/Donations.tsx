@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
 import { Plus, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ interface Donor {
 const Donations = () => {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [donors, setDonors] = useState<Donor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -139,12 +141,6 @@ const Donations = () => {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(language === "pt" ? "pt-BR" : "en-US", {
-      style: "currency",
-      currency: language === "pt" ? "BRL" : "USD",
-    }).format(value);
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString + "T00:00:00").toLocaleDateString(language === "pt" ? "pt-BR" : "en-US");

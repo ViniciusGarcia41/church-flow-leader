@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
 import { FileDown, Calendar } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ interface ReportData {
 const Reports = () => {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]
@@ -68,12 +70,6 @@ const Reports = () => {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(language === "pt" ? "pt-BR" : "en-US", {
-      style: "currency",
-      currency: language === "pt" ? "BRL" : "USD",
-    }).format(value);
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString + "T00:00:00").toLocaleDateString(language === "pt" ? "pt-BR" : "en-US");

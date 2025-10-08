@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
 import { DollarSign, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -17,7 +18,8 @@ interface FinancialSummary {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [summary, setSummary] = useState<FinancialSummary>({
     totalDonations: 0,
     totalExpenses: 0,
@@ -82,12 +84,6 @@ const Dashboard = () => {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(language === "pt" ? "pt-BR" : "en-US", {
-      style: "currency",
-      currency: language === "pt" ? "BRL" : "USD",
-    }).format(value);
-  };
 
   if (loading) {
     return (

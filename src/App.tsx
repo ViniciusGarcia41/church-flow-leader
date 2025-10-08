@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { CurrencyIndicator } from "@/components/CurrencyIndicator";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -24,6 +25,7 @@ const App = () => (
       <LanguageProvider>
         <BrowserRouter>
           <AuthProvider>
+            <CurrencyIndicator />
             <Toaster />
             <Sonner />
             <Routes>

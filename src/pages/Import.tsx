@@ -36,10 +36,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const Import = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { formatCurrency } = useCurrency();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
@@ -199,21 +201,6 @@ const Import = () => {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
-
-  const getTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      income: "Receita",
-      expense: "Despesa",
-      unknown: "Indefinido",
-    };
-    return labels[type] || type;
-  };
 
   const getTypeBadgeVariant = (type: string) => {
     if (type === "income") return "default";
@@ -259,10 +246,10 @@ const Import = () => {
                   <Alert>
                     <FileSpreadsheet className="h-4 w-4" />
                     <AlertDescription>
-                      <div className="space-y-1">
+                  <div className="space-y-1">
                         <p className="font-semibold">{file.name}</p>
                         <p className="text-sm">
-                          Tamanho: {(file.size / 1024).toFixed(2)} KB
+                          {t("import.fileSize")}: {(file.size / 1024).toFixed(2)} KB
                         </p>
                       </div>
                     </AlertDescription>
@@ -277,25 +264,25 @@ const Import = () => {
                   {loading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processando...
+                      {t("import.processingFile")}
                     </>
                   ) : (
                     <>
                       <Eye className="h-4 w-4 mr-2" />
-                      Processar e Visualizar
+                      {t("import.processAndView")}
                     </>
                   )}
                 </Button>
               </div>
 
               <div className="border-t pt-6">
-                <h3 className="font-semibold mb-3">Como funciona:</h3>
+                <h3 className="font-semibold mb-3">{t("import.howItWorks")}</h3>
                 <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                  <li>Selecione um arquivo Excel, CSV ou PDF com seus lançamentos financeiros</li>
-                  <li>O sistema lerá automaticamente as colunas (Data, Descrição, Valor, etc.)</li>
-                  <li>Você poderá revisar e editar os dados antes de importar</li>
-                  <li>Os registros serão automaticamente classificados como receitas ou despesas</li>
-                  <li>Tudo será salvo no banco de dados e aparecerá nos relatórios</li>
+                  <li>{t("import.step1")}</li>
+                  <li>{t("import.step2")}</li>
+                  <li>{t("import.step3")}</li>
+                  <li>{t("import.step4")}</li>
+                  <li>{t("import.step5")}</li>
                 </ol>
               </div>
             </CardContent>
@@ -309,7 +296,7 @@ const Import = () => {
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    Visualizar Dados
+                    {t("import.viewData")}
                   </span>
                   <Button
                     variant="outline"
@@ -328,30 +315,30 @@ const Import = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground">
-                      Total de Receitas
+                      {t("import.totalIncome")}
                     </p>
                     <p className="text-2xl font-bold text-green-600">
                       {formatCurrency(parseResult.totalIncome)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {editedRecords.filter((r) => r.type === "income").length}{" "}
-                      registro(s)
+                      {t("import.recordsPlural")}
                     </p>
                   </div>
                   <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground">
-                      Total de Despesas
+                      {t("import.totalExpenses")}
                     </p>
                     <p className="text-2xl font-bold text-red-600">
                       {formatCurrency(parseResult.totalExpense)}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {editedRecords.filter((r) => r.type === "expense").length}{" "}
-                      registro(s)
+                      {t("import.recordsPlural")}
                     </p>
                   </div>
                   <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Saldo</p>
+                    <p className="text-sm text-muted-foreground">{t("import.balance")}</p>
                     <p
                       className={`text-2xl font-bold ${
                         parseResult.totalIncome - parseResult.totalExpense >= 0
@@ -364,7 +351,7 @@ const Import = () => {
                       )}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {editedRecords.length} total de registros
+                      {editedRecords.length} {t("import.totalRecords")}
                     </p>
                   </div>
                 </div>
@@ -374,16 +361,16 @@ const Import = () => {
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       <p className="font-semibold mb-2">
-                        {parseResult.errors.length} erro(s) encontrado(s):
+                        {parseResult.errors.length} {t("import.errorsFound")}
                       </p>
                       <ul className="text-sm space-y-1">
                         {parseResult.errors.slice(0, 5).map((err, i) => (
                           <li key={i}>
-                            Linha {err.row}: {err.message}
+                            {t("import.date")} {err.row}: {err.message}
                           </li>
                         ))}
                         {parseResult.errors.length > 5 && (
-                          <li>... e mais {parseResult.errors.length - 5}</li>
+                          <li>... {t("import.andMore")} {parseResult.errors.length - 5}</li>
                         )}
                       </ul>
                     </AlertDescription>
@@ -394,12 +381,12 @@ const Import = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Valor</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
+                        <TableHead>{t("import.date")}</TableHead>
+                        <TableHead>{t("import.type")}</TableHead>
+                        <TableHead>{t("import.description")}</TableHead>
+                        <TableHead>{t("import.amount")}</TableHead>
+                        <TableHead>{t("import.category")}</TableHead>
+                        <TableHead className="text-right">{t("import.actions")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -426,8 +413,8 @@ const Import = () => {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="income">Receita</SelectItem>
-                                <SelectItem value="expense">Despesa</SelectItem>
+                                <SelectItem value="income">{t("import.income")}</SelectItem>
+                                <SelectItem value="expense">{t("import.expense")}</SelectItem>
                               </SelectContent>
                             </Select>
                           </TableCell>
