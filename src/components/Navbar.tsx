@@ -2,9 +2,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { DollarSign, LogOut, LayoutDashboard, Heart, CreditCard, Users, FileText, Upload, Languages, Menu } from "lucide-react";
+import { LogOut, LayoutDashboard, Heart, CreditCard, Users, FileText, Upload, Languages, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import churchLogo from "@/assets/church-logo.jpeg";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -71,10 +72,8 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link to="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary">
-            <DollarSign className="h-6 w-6 text-primary-foreground" />
-          </div>
+        <Link to="/dashboard" className="flex items-center gap-3">
+          <img src={churchLogo} alt="Church Logo" className="h-12 w-12 rounded-lg object-cover" />
           <span className="text-xl font-bold">ChurchLedger</span>
         </Link>
 
