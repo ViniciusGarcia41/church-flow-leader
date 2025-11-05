@@ -99,20 +99,20 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto p-6 space-y-8">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">{t("dashboard.title")}</h1>
-          <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{t("dashboard.title")}</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">{t("dashboard.subtitle")}</p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-gradient-card shadow-lg border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("dashboard.totalBalance")}</CardTitle>
-              <Wallet className="h-4 w-4 text-primary" />
+              <CardTitle className="text-xs sm:text-sm font-medium">{t("dashboard.totalBalance")}</CardTitle>
+              <Wallet className="h-4 w-4 text-primary flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(summary.balance)}</div>
+              <div className="text-xl sm:text-2xl font-bold">{formatCurrency(summary.balance)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {t("dashboard.totalBalanceDesc")}
               </p>
@@ -121,11 +121,11 @@ const Dashboard = () => {
 
           <Card className="bg-success-light border-success/20 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("dashboard.donationsTotal")}</CardTitle>
-              <TrendingUp className="h-4 w-4 text-success" />
+              <CardTitle className="text-xs sm:text-sm font-medium">{t("dashboard.donationsTotal")}</CardTitle>
+              <TrendingUp className="h-4 w-4 text-success flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">{formatCurrency(summary.totalDonations)}</div>
+              <div className="text-xl sm:text-2xl font-bold text-success">{formatCurrency(summary.totalDonations)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {t("dashboard.accumulatedTotal")}
               </p>
@@ -134,11 +134,11 @@ const Dashboard = () => {
 
           <Card className="bg-destructive-light border-destructive/20 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("dashboard.expensesTotal")}</CardTitle>
-              <TrendingDown className="h-4 w-4 text-destructive" />
+              <CardTitle className="text-xs sm:text-sm font-medium">{t("dashboard.expensesTotal")}</CardTitle>
+              <TrendingDown className="h-4 w-4 text-destructive flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">{formatCurrency(summary.totalExpenses)}</div>
+              <div className="text-xl sm:text-2xl font-bold text-destructive">{formatCurrency(summary.totalExpenses)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {t("dashboard.accumulatedTotal")}
               </p>
@@ -147,14 +147,14 @@ const Dashboard = () => {
 
           <Card className="bg-gradient-primary text-primary-foreground shadow-lg border-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("dashboard.monthBalance")}</CardTitle>
-              <DollarSign className="h-4 w-4" />
+              <CardTitle className="text-xs sm:text-sm font-medium">{t("dashboard.monthBalance")}</CardTitle>
+              <DollarSign className="h-4 w-4 flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold">
                 {formatCurrency(summary.donationsThisMonth - summary.expensesThisMonth)}
               </div>
-              <p className="text-xs opacity-80 mt-1">
+              <p className="text-xs opacity-80 mt-1 break-words">
                 {formatCurrency(summary.donationsThisMonth)} - {formatCurrency(summary.expensesThisMonth)}
               </p>
             </CardContent>

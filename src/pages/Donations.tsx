@@ -185,25 +185,25 @@ const Donations = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto p-6 space-y-8">
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold">{t("donations.title")}</h1>
-            <p className="text-muted-foreground">{t("donations.subtitle")}</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{t("donations.title")}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">{t("donations.subtitle")}</p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={exportToExcel} variant="outline" className="gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={exportToExcel} variant="outline" className="gap-2 w-full sm:w-auto">
               <FileDown className="h-4 w-4" />
-              {t("donations.exportExcel")}
+              <span className="sm:inline">{t("donations.exportExcel")}</span>
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2 w-full sm:w-auto">
                   <Plus className="h-4 w-4" />
                   {t("donations.new")}
                 </Button>
               </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t("donations.newTitle")}</DialogTitle>
               </DialogHeader>
@@ -225,7 +225,7 @@ const Donations = () => {
                   </Select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="amount">{t("donations.amount")} {t("common.required")}</Label>
                     <Input
@@ -237,6 +237,7 @@ const Donations = () => {
                       placeholder="0.00"
                       required
                       disabled={isSubmitting}
+                      className="text-base"
                     />
                   </div>
                   <div className="space-y-2">
@@ -248,11 +249,12 @@ const Donations = () => {
                       defaultValue={new Date().toISOString().split("T")[0]}
                       required
                       disabled={isSubmitting}
+                      className="text-base"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="donation_type">{t("donations.type")} {t("common.required")}</Label>
                     <Select name="donation_type" defaultValue="offering" required disabled={isSubmitting}>
@@ -341,32 +343,32 @@ const Donations = () => {
                 {t("donations.none")}
               </p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 overflow-x-auto">
                 {donations.map((donation) => (
                   <div
                     key={donation.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors gap-3 min-w-[280px]"
                   >
-                    <div className="space-y-1">
-                      <p className="font-medium">{getDonationTypeLabel(donation.donation_type)}</p>
-                      <div className="flex gap-4 text-sm text-muted-foreground">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <p className="font-medium text-sm sm:text-base">{getDonationTypeLabel(donation.donation_type)}</p>
+                      <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                         <span>{formatDate(donation.donation_date)}</span>
                         {donation.category && <span>• {donation.category}</span>}
-                        {donation.payment_method && <span>• {donation.payment_method}</span>}
+                        {donation.payment_method && <span className="hidden sm:inline">• {donation.payment_method}</span>}
                       </div>
                       {donation.notes && (
-                        <p className="text-sm text-muted-foreground">{donation.notes}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{donation.notes}</p>
                       )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <p className="text-xl font-bold text-success">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                      <p className="text-lg sm:text-xl font-bold text-success whitespace-nowrap">
                         {formatCurrency(Number(donation.amount))}
                       </p>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(donation.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive-light"
+                        className="text-destructive hover:text-destructive hover:bg-destructive-light flex-shrink-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

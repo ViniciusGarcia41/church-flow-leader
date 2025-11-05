@@ -256,10 +256,10 @@ const Reports = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto p-6 space-y-8">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">{t("reports.title")}</h1>
-          <p className="text-muted-foreground">{t("reports.subtitle")}</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{t("reports.title")}</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">{t("reports.subtitle")}</p>
         </div>
 
         <Card className="shadow-lg">
@@ -270,7 +270,7 @@ const Reports = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startDate">{t("reports.startDate")}</Label>
                 <Input
@@ -278,20 +278,27 @@ const Reports = () => {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                  className="text-base"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="endDate">{t("reports.endDate")}</Label>
-                <Input id="endDate" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <Input 
+                  id="endDate" 
+                  type="date" 
+                  value={endDate} 
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="text-base"
+                />
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4">
-              <Button onClick={generatePDF} disabled={loading} className="gap-2">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <Button onClick={generatePDF} disabled={loading} className="gap-2 w-full sm:w-auto">
                 <FileDown className="h-4 w-4" />
                 {loading ? t("reports.generating") : t("reports.exportPDF")}
               </Button>
-              <Button onClick={generateExcel} disabled={loading} variant="outline" className="gap-2">
+              <Button onClick={generateExcel} disabled={loading} variant="outline" className="gap-2 w-full sm:w-auto">
                 <FileDown className="h-4 w-4" />
                 {loading ? t("reports.generating") : t("reports.exportExcel")}
               </Button>

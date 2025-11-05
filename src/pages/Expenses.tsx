@@ -135,25 +135,25 @@ const Expenses = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto p-6 space-y-8">
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold">{t("expenses.title")}</h1>
-            <p className="text-muted-foreground">{t("expenses.subtitle")}</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{t("expenses.title")}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">{t("expenses.subtitle")}</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" />
                 {t("expenses.new")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t("expenses.newTitle")}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="amount">{t("expenses.amount")} {t("common.required")}</Label>
                     <Input
@@ -165,6 +165,7 @@ const Expenses = () => {
                       placeholder="0.00"
                       required
                       disabled={isSubmitting}
+                      className="text-base"
                     />
                   </div>
                   <div className="space-y-2">
@@ -176,6 +177,7 @@ const Expenses = () => {
                       defaultValue={new Date().toISOString().split("T")[0]}
                       required
                       disabled={isSubmitting}
+                      className="text-base"
                     />
                   </div>
                 </div>
@@ -192,7 +194,7 @@ const Expenses = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="category">{t("expenses.category")} {t("common.required")}</Label>
                     <Select name="category" defaultValue="other" required disabled={isSubmitting}>
@@ -271,33 +273,33 @@ const Expenses = () => {
                 {t("expenses.none")}
               </p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 overflow-x-auto">
                 {expenses.map((expense) => (
                   <div
                     key={expense.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors gap-3 min-w-[280px]"
                   >
-                    <div className="space-y-1">
-                      <p className="font-medium">{expense.description}</p>
-                      <div className="flex gap-4 text-sm text-muted-foreground">
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <p className="font-medium text-sm sm:text-base">{expense.description}</p>
+                      <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                         <span>{formatDate(expense.expense_date)}</span>
                         <span>• {getCategoryLabel(expense.category)}</span>
-                        {expense.vendor && <span>• {expense.vendor}</span>}
-                        {expense.payment_method && <span>• {expense.payment_method}</span>}
+                        {expense.vendor && <span className="hidden sm:inline">• {expense.vendor}</span>}
+                        {expense.payment_method && <span className="hidden sm:inline">• {expense.payment_method}</span>}
                       </div>
                       {expense.notes && (
-                        <p className="text-sm text-muted-foreground">{expense.notes}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{expense.notes}</p>
                       )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <p className="text-xl font-bold text-destructive">
+                    <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                      <p className="text-lg sm:text-xl font-bold text-destructive whitespace-nowrap">
                         {formatCurrency(Number(expense.amount))}
                       </p>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(expense.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive-light"
+                        className="text-destructive hover:text-destructive hover:bg-destructive-light flex-shrink-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
