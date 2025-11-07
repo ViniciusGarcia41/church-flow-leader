@@ -81,20 +81,20 @@ const Navbar = () => {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link to="/dashboard" className="flex items-center gap-3">
+      <div className="container mx-auto flex h-16 items-center px-4 gap-3">
+        <Link to="/dashboard" className="flex items-center gap-3 min-w-0">
           <LogoUploader currentLogo={churchLogo} onLogoChange={setChurchLogo} />
-          <span className="text-xl font-bold">ChurchLedger</span>
+          <span className="text-xl font-bold hidden sm:inline truncate">ChurchLedger</span>
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden lg:flex items-center gap-2">
+        <div className="hidden lg:flex items-center gap-2 ml-auto">
           <ThemeToggle />
           <NavLinks />
         </div>
 
         {/* Mobile Navigation */}
-        <div className="flex items-center gap-2 lg:hidden">
+        <div className="flex items-center gap-2 lg:hidden ml-auto">
           <ThemeToggle />
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>

@@ -21,9 +21,8 @@ export const ThemeToggle = () => {
   return (
     <Button
       variant="ghost"
-      size="icon"
       onClick={toggleTheme}
-      className="h-9 w-9"
+      className="h-9 min-w-[44px] px-3"
       aria-label="Toggle theme"
     >
       {theme === "dark" ? (
