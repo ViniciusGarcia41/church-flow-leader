@@ -67,25 +67,28 @@ export const LogoUploader = ({ currentLogo, onLogoChange }: LogoUploaderProps) =
     }
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
+
   return (
     <>
       <div
-        className="relative group"
+        className="relative group cursor-pointer"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={handleClick}
       >
         <img
           src={currentLogo}
           alt="Church Logo"
-          className="h-12 w-12 rounded-lg object-cover cursor-pointer transition-opacity"
+          className="h-12 w-12 rounded-lg object-cover transition-opacity pointer-events-none"
           style={{ opacity: isHovered ? 0.7 : 1 }}
-          onClick={() => fileInputRef.current?.click()}
         />
         {isHovered && (
-          <div
-            className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 cursor-pointer"
-            onClick={() => fileInputRef.current?.click()}
-          >
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 pointer-events-none z-10">
             <Upload className="h-5 w-5 text-white" />
           </div>
         )}
