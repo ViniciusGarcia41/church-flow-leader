@@ -265,7 +265,7 @@ const Reports = () => {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+              <Calendar className="h-5 w-5" style={{ color: '#e4e1d2' }} />
               {t("reports.selectPeriod")}
             </CardTitle>
           </CardHeader>

@@ -291,7 +291,7 @@ const Donors = () => {
                   >
                     <div className="flex items-center gap-4">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary" />
+                        <User className="h-5 w-5" style={{ color: '#e4e1d2' }} />
                       </div>
                       <div className="space-y-1">
                         <p className="font-medium">{donor.name}</p>

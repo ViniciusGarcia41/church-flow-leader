@@ -4,14 +4,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LogOut, LayoutDashboard, Heart, CreditCard, Users, FileText, Upload, Languages, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState } from "react";
-import churchLogo from "@/assets/church-logo.jpeg";
+import { useState, useEffect } from "react";
+import defaultChurchLogo from "@/assets/church-logo.jpeg";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { LogoUploader } from "@/components/LogoUploader";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const { t, toggleLanguage } = useLanguage();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [churchLogo, setChurchLogo] = useState(defaultChurchLogo);
+
+  useEffect(() => {
+    const savedLogo = localStorage.getItem("churchledger-logo");
+    if (savedLogo) {
+      setChurchLogo(savedLogo);
+    }
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -73,28 +83,32 @@ const Navbar = () => {
     <nav className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/dashboard" className="flex items-center gap-3">
-          <img src={churchLogo} alt="Church Logo" className="h-12 w-12 rounded-lg object-cover" />
+          <LogoUploader currentLogo={churchLogo} onLogoChange={setChurchLogo} />
           <span className="text-xl font-bold">ChurchLedger</span>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-2">
+          <ThemeToggle />
           <NavLinks />
         </div>
 
         {/* Mobile Navigation */}
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild className="lg:hidden">
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[280px] sm:w-[350px]">
-            <div className="flex flex-col gap-2 mt-8">
-              <NavLinks />
-            </div>
-          </SheetContent>
-        </Sheet>
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeToggle />
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[280px] sm:w-[350px]">
+              <div className="flex flex-col gap-2 mt-8">
+                <NavLinks />
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </nav>
   );
