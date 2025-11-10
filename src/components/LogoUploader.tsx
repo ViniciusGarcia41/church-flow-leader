@@ -98,6 +98,7 @@ export const LogoUploader = ({ currentLogo, onLogoChange }: LogoUploaderProps) =
           accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
           className="hidden"
           onChange={handleFileChange}
+          key={currentLogo}
         />
       </div>
 
