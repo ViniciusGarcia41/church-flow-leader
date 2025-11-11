@@ -67,16 +67,15 @@ export const LogoUploader = ({ currentLogo, onLogoChange }: LogoUploaderProps) =
     }
   };
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleClick = () => {
     fileInputRef.current?.click();
   };
 
   return (
     <>
-      <div
-        className="relative group cursor-pointer"
+      <button
+        type="button"
+        className="relative group cursor-pointer border-0 bg-transparent p-0 rounded-lg"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleClick}
@@ -84,23 +83,23 @@ export const LogoUploader = ({ currentLogo, onLogoChange }: LogoUploaderProps) =
         <img
           src={currentLogo}
           alt="Church Logo"
-          className="h-12 w-12 rounded-lg object-cover transition-opacity pointer-events-none"
+          className="h-12 w-12 min-w-[40px] min-h-[40px] rounded-lg object-contain transition-opacity"
           style={{ opacity: isHovered ? 0.7 : 1 }}
         />
         {isHovered && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 pointer-events-none z-10">
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 z-10">
             <Upload className="h-5 w-5 text-white" />
           </div>
         )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
-          className="hidden"
-          onChange={handleFileChange}
-          key={currentLogo}
-        />
-      </div>
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
+        className="hidden"
+        onChange={handleFileChange}
+        key={currentLogo}
+      />
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md">

@@ -88,7 +88,7 @@ const Auth = () => {
           <div className="space-y-2">
             <CardTitle className="text-3xl font-bold">ChurchLedger</CardTitle>
             <CardDescription className="text-base">
-              {t("auth.subtitle")}
+              Gerencie as doações, despesas e finanças da sua igreja de forma simples e organizada.
             </CardDescription>
           </div>
         </CardHeader>

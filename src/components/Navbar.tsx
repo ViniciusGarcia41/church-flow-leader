@@ -82,24 +82,23 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="container mx-auto flex h-16 items-center px-4 gap-3">
-        <Link to="/dashboard" className="flex items-center gap-3 min-w-0">
+        <Link to="/dashboard" className="flex items-center gap-3 min-w-0 shrink-0">
           <LogoUploader currentLogo={churchLogo} onLogoChange={setChurchLogo} />
-          <span className="text-xl font-bold hidden sm:inline truncate">ChurchLedger</span>
+          <span className="text-xl font-bold hidden md:inline truncate">ChurchLedger</span>
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-2 ml-auto">
-          <ThemeToggle />
           <NavLinks />
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile and Tablet Navigation */}
         <div className="flex items-center gap-2 lg:hidden ml-auto">
           <ThemeToggle />
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className="h-10 w-10">
+                <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[280px] sm:w-[350px]">
@@ -108,6 +107,11 @@ const Navbar = () => {
               </div>
             </SheetContent>
           </Sheet>
+        </div>
+        
+        {/* Desktop Theme Toggle */}
+        <div className="hidden lg:flex ml-2">
+          <ThemeToggle />
         </div>
       </div>
     </nav>
