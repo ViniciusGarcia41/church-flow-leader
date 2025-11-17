@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -295,14 +295,24 @@ const Expenses = () => {
                       <p className="text-lg sm:text-xl font-bold text-destructive whitespace-nowrap">
                         {formatCurrency(Number(expense.amount))}
                       </p>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(expense.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive-light flex-shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="edit"
+                          size="xs"
+                          className="gap-1"
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(expense.id)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive-light flex-shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
