@@ -32,6 +32,8 @@ const Expenses = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -106,6 +108,48 @@ const Expenses = () => {
       toast.error(t("expenses.deleteError"), {
         description: error.message,
       });
+    }
+  };
+
+  const handleEdit = (expense: Expense) => {
+    setEditingExpense(expense);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingExpense) return;
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const expenseData = {
+      description: formData.get("description") as string,
+      amount: parseFloat(formData.get("amount") as string),
+      category: formData.get("category") as "salaries" | "utilities" | "maintenance" | "missions" | "events" | "supplies" | "other",
+      payment_method: formData.get("payment_method") as string || null,
+      vendor: formData.get("vendor") as string || null,
+      notes: formData.get("notes") as string || null,
+      expense_date: formData.get("expense_date") as string,
+    };
+
+    try {
+      const { error } = await supabase
+        .from("expenses")
+        .update(expenseData)
+        .eq("id", editingExpense.id);
+
+      if (error) throw error;
+
+      toast.success(t("expenses.updateSuccess"));
+      setIsEditDialogOpen(false);
+      setEditingExpense(null);
+      fetchExpenses();
+    } catch (error: any) {
+      toast.error(t("expenses.updateError"), {
+        description: error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -296,14 +340,15 @@ const Expenses = () => {
                         {formatCurrency(Number(expense.amount))}
                       </p>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="edit"
-                          size="xs"
-                          className="gap-1"
-                        >
-                          <Pencil className="h-3 w-3" />
-                          Edit
-                        </Button>
+                      <Button
+                        variant="edit"
+                        size="xs"
+                        className="gap-1"
+                        onClick={() => handleEdit(expense)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit
+                      </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -320,6 +365,121 @@ const Expenses = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Expense Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t("expenses.editTitle")}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">{t("expenses.description")}</Label>
+                  <Input
+                    id="edit-description"
+                    name="description"
+                    defaultValue={editingExpense?.description}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-amount">{t("expenses.amount")}</Label>
+                  <Input
+                    id="edit-amount"
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingExpense?.amount}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">{t("expenses.category")}</Label>
+                  <Select name="category" defaultValue={editingExpense?.category}>
+                    <SelectTrigger id="edit-category">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="salaries">{t("expenses.categories.salaries")}</SelectItem>
+                      <SelectItem value="utilities">{t("expenses.categories.utilities")}</SelectItem>
+                      <SelectItem value="maintenance">{t("expenses.categories.maintenance")}</SelectItem>
+                      <SelectItem value="missions">{t("expenses.categories.missions")}</SelectItem>
+                      <SelectItem value="events">{t("expenses.categories.events")}</SelectItem>
+                      <SelectItem value="supplies">{t("expenses.categories.supplies")}</SelectItem>
+                      <SelectItem value="other">{t("expenses.categories.other")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-payment_method">{t("expenses.paymentMethod")}</Label>
+                  <Select name="payment_method" defaultValue={editingExpense?.payment_method || ""}>
+                    <SelectTrigger id="edit-payment_method">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">{t("expenses.paymentMethods.cash")}</SelectItem>
+                      <SelectItem value="check">{t("expenses.paymentMethods.check")}</SelectItem>
+                      <SelectItem value="bank_transfer">{t("expenses.paymentMethods.bank_transfer")}</SelectItem>
+                      <SelectItem value="credit_card">{t("expenses.paymentMethods.credit_card")}</SelectItem>
+                      <SelectItem value="pix">{t("expenses.paymentMethods.pix")}</SelectItem>
+                      <SelectItem value="other">{t("expenses.paymentMethods.other")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-vendor">{t("expenses.vendor")}</Label>
+                  <Input
+                    id="edit-vendor"
+                    name="vendor"
+                    defaultValue={editingExpense?.vendor || ""}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-expense_date">{t("expenses.date")}</Label>
+                  <Input
+                    id="edit-expense_date"
+                    name="expense_date"
+                    type="date"
+                    defaultValue={editingExpense?.expense_date}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-notes">{t("expenses.notes")}</Label>
+                <Input
+                  id="edit-notes"
+                  name="notes"
+                  defaultValue={editingExpense?.notes || ""}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setEditingExpense(null);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? t("common.saving") : t("common.save")}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

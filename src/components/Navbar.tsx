@@ -72,6 +72,9 @@ const Navbar = () => {
         <Languages className="h-4 w-4" />
         {t("nav.language")}
       </Button>
+      <div className="w-full">
+        <ThemeToggle />
+      </div>
       <Button variant="outline" size="sm" onClick={() => { handleSignOut(); setIsOpen(false); }} className="gap-2 w-full justify-start">
         <LogOut className="h-4 w-4" />
         {t("nav.signout")}
@@ -94,7 +97,6 @@ const Navbar = () => {
 
         {/* Mobile and Tablet Navigation */}
         <div className="flex items-center gap-2 lg:hidden ml-auto">
-          <ThemeToggle />
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10">
@@ -107,11 +109,6 @@ const Navbar = () => {
               </div>
             </SheetContent>
           </Sheet>
-        </div>
-        
-        {/* Desktop Theme Toggle */}
-        <div className="hidden lg:flex ml-2">
-          <ThemeToggle />
         </div>
       </div>
     </nav>

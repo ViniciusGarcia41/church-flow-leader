@@ -55,6 +55,9 @@
     "loadError": "Error loading donations",
     "registerError": "Error registering donation",
     "exportSuccess": "Excel exported successfully!",
+    "editTitle": "Edit Donation",
+    "updateSuccess": "Donation updated successfully!",
+    "updateError": "Error updating donation",
     "types": {
       "tithe": "Tithe",
       "offering": "Offering",
@@ -88,6 +91,9 @@
     "deleteError": "Error deleting expense",
     "loadError": "Error loading expenses",
     "registerError": "Error registering expense",
+    "editTitle": "Edit Expense",
+    "updateSuccess": "Expense updated successfully!",
+    "updateError": "Error updating expense",
     "categories": {
       "salaries": "Salaries",
       "utilities": "Utilities",
@@ -124,7 +130,10 @@
     "loadError": "Error loading donors",
     "registerError": "Error registering donor",
     "receiptSuccess": "Receipt generated successfully!",
-    "receiptError": "Error generating receipt"
+    "receiptError": "Error generating receipt",
+    "editTitle": "Edit Donor",
+    "updateSuccess": "Donor updated successfully!",
+    "updateError": "Error updating donor"
   },
   "reports": {
     "title": "Financial Reports",
@@ -240,6 +249,9 @@
     "loading": "Loading...",
     "required": "*",
     "optional": "(optional)",
-    "paymentMethodPlaceholder": "Ex: Cash, PIX, Card"
+    "paymentMethodPlaceholder": "Ex: Cash, PIX, Card",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving..."
   }
 }
