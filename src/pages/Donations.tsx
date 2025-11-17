@@ -43,6 +43,8 @@ const Donations = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
   const [selectedDonor, setSelectedDonor] = useState<string>("");
+  const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -138,6 +140,50 @@ const Donations = () => {
       toast.error(t("donations.deleteError"), {
         description: error.message,
       });
+    }
+  };
+
+  const handleEdit = (donation: Donation) => {
+    setEditingDonation(donation);
+    setSelectedDonor(donation.donor_id || "anonymous");
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingDonation) return;
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const donationData = {
+      donor_id: selectedDonor === "anonymous" || !selectedDonor ? null : selectedDonor,
+      amount: parseFloat(formData.get("amount") as string),
+      donation_type: formData.get("donation_type") as "tithe" | "offering" | "special_project" | "campaign",
+      category: formData.get("category") as string || null,
+      payment_method: formData.get("payment_method") as string || null,
+      notes: formData.get("notes") as string || null,
+      donation_date: formData.get("donation_date") as string,
+    };
+
+    try {
+      const { error } = await supabase
+        .from("donations")
+        .update(donationData)
+        .eq("id", editingDonation.id);
+
+      if (error) throw error;
+
+      toast.success(t("donations.updateSuccess"));
+      setIsEditDialogOpen(false);
+      setEditingDonation(null);
+      setSelectedDonor("");
+      fetchDonations();
+    } catch (error: any) {
+      toast.error(t("donations.updateError"), {
+        description: error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -365,14 +411,15 @@ const Donations = () => {
                         {formatCurrency(Number(donation.amount))}
                       </p>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="edit"
-                          size="xs"
-                          className="gap-1"
-                        >
-                          <Pencil className="h-3 w-3" />
-                          Edit
-                        </Button>
+                      <Button
+                        variant="edit"
+                        size="xs"
+                        className="gap-1"
+                        onClick={() => handleEdit(donation)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit
+                      </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -389,6 +436,126 @@ const Donations = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Donation Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t("donations.editTitle")}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-donor">{t("donations.donor")}</Label>
+                  <Select value={selectedDonor} onValueChange={setSelectedDonor}>
+                    <SelectTrigger id="edit-donor">
+                      <SelectValue placeholder={t("donations.selectDonor")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="anonymous">{t("donations.anonymous")}</SelectItem>
+                      {donors.map((donor) => (
+                        <SelectItem key={donor.id} value={donor.id}>
+                          {donor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-amount">{t("donations.amount")}</Label>
+                  <Input
+                    id="edit-amount"
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editingDonation?.amount}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-donation_type">{t("donations.type")}</Label>
+                  <Select name="donation_type" defaultValue={editingDonation?.donation_type}>
+                    <SelectTrigger id="edit-donation_type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tithe">{t("donations.types.tithe")}</SelectItem>
+                      <SelectItem value="offering">{t("donations.types.offering")}</SelectItem>
+                      <SelectItem value="special_project">{t("donations.types.special_project")}</SelectItem>
+                      <SelectItem value="campaign">{t("donations.types.campaign")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-category">{t("donations.category")}</Label>
+                  <Input
+                    id="edit-category"
+                    name="category"
+                    defaultValue={editingDonation?.category || ""}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-payment_method">{t("donations.paymentMethod")}</Label>
+                  <Select name="payment_method" defaultValue={editingDonation?.payment_method || ""}>
+                    <SelectTrigger id="edit-payment_method">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">{t("donations.paymentMethods.cash")}</SelectItem>
+                      <SelectItem value="check">{t("donations.paymentMethods.check")}</SelectItem>
+                      <SelectItem value="bank_transfer">{t("donations.paymentMethods.bank_transfer")}</SelectItem>
+                      <SelectItem value="credit_card">{t("donations.paymentMethods.credit_card")}</SelectItem>
+                      <SelectItem value="pix">{t("donations.paymentMethods.pix")}</SelectItem>
+                      <SelectItem value="other">{t("donations.paymentMethods.other")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-donation_date">{t("donations.date")}</Label>
+                  <Input
+                    id="edit-donation_date"
+                    name="donation_date"
+                    type="date"
+                    defaultValue={editingDonation?.donation_date}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-notes">{t("donations.notes")}</Label>
+                <Input
+                  id="edit-notes"
+                  name="notes"
+                  defaultValue={editingDonation?.notes || ""}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setEditingDonation(null);
+                    setSelectedDonor("");
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? t("common.saving") : t("common.save")}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

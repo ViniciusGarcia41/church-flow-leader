@@ -30,6 +30,8 @@ const Donors = () => {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingDonor, setEditingDonor] = useState<Donor | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -102,6 +104,46 @@ const Donors = () => {
       toast.error(t("donors.deleteError"), {
         description: error.message,
       });
+    }
+  };
+
+  const handleEdit = (donor: Donor) => {
+    setEditingDonor(donor);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingDonor) return;
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const donorData = {
+      name: formData.get("name") as string,
+      email: formData.get("email") as string || null,
+      phone: formData.get("phone") as string || null,
+      address: formData.get("address") as string || null,
+      notes: formData.get("notes") as string || null,
+    };
+
+    try {
+      const { error } = await supabase
+        .from("donors")
+        .update(donorData)
+        .eq("id", editingDonor.id);
+
+      if (error) throw error;
+
+      toast.success(t("donors.updateSuccess"));
+      setIsEditDialogOpen(false);
+      setEditingDonor(null);
+      fetchDonors();
+    } catch (error: any) {
+      toast.error(t("donors.updateError"), {
+        description: error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -302,14 +344,15 @@ const Donors = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="edit"
-                        size="xs"
-                        className="gap-1"
-                      >
-                        <Pencil className="h-3 w-3" />
-                        Edit
-                      </Button>
+                    <Button
+                      variant="edit"
+                      size="xs"
+                      className="gap-1"
+                      onClick={() => handleEdit(donor)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -334,6 +377,82 @@ const Donors = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Donor Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t("donors.editTitle")}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">{t("donors.name")}</Label>
+                  <Input
+                    id="edit-name"
+                    name="name"
+                    defaultValue={editingDonor?.name}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">{t("donors.email")}</Label>
+                  <Input
+                    id="edit-email"
+                    name="email"
+                    type="email"
+                    defaultValue={editingDonor?.email || ""}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">{t("donors.phone")}</Label>
+                  <Input
+                    id="edit-phone"
+                    name="phone"
+                    defaultValue={editingDonor?.phone || ""}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-address">{t("donors.address")}</Label>
+                  <Input
+                    id="edit-address"
+                    name="address"
+                    defaultValue={editingDonor?.address || ""}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-notes">{t("donors.notes")}</Label>
+                <Input
+                  id="edit-notes"
+                  name="notes"
+                  defaultValue={editingDonor?.notes || ""}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setEditingDonor(null);
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? t("common.saving") : t("common.save")}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

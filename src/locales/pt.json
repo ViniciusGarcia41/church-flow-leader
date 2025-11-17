@@ -55,6 +55,9 @@
     "loadError": "Erro ao carregar doações",
     "registerError": "Erro ao cadastrar doação",
     "exportSuccess": "Excel exportado com sucesso!",
+    "editTitle": "Editar Doação",
+    "updateSuccess": "Doação atualizada com sucesso!",
+    "updateError": "Erro ao atualizar doação",
     "types": {
       "tithe": "Dízimo",
       "offering": "Oferta",
@@ -88,6 +91,9 @@
     "deleteError": "Erro ao excluir despesa",
     "loadError": "Erro ao carregar despesas",
     "registerError": "Erro ao cadastrar despesa",
+    "editTitle": "Editar Despesa",
+    "updateSuccess": "Despesa atualizada com sucesso!",
+    "updateError": "Erro ao atualizar despesa",
     "categories": {
       "salaries": "Salários",
       "utilities": "Utilidades",
@@ -124,7 +130,10 @@
     "loadError": "Erro ao carregar doadores",
     "registerError": "Erro ao cadastrar doador",
     "receiptSuccess": "Recibo gerado com sucesso!",
-    "receiptError": "Erro ao gerar recibo"
+    "receiptError": "Erro ao gerar recibo",
+    "editTitle": "Editar Doador",
+    "updateSuccess": "Doador atualizado com sucesso!",
+    "updateError": "Erro ao atualizar doador"
   },
   "reports": {
     "title": "Relatórios Financeiros",
@@ -240,6 +249,9 @@
     "loading": "Carregando...",
     "required": "*",
     "optional": "(opcional)",
-    "paymentMethodPlaceholder": "Ex: Dinheiro, PIX, Cartão"
+    "paymentMethodPlaceholder": "Ex: Dinheiro, PIX, Cartão",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "saving": "Salvando..."
   }
 }
