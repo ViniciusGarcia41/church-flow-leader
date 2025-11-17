@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/Navbar";
-import { Plus, Trash2, User, FileText } from "lucide-react";
+import { Plus, Trash2, User, FileText, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import jsPDF from "jspdf";
@@ -302,6 +302,14 @@ const Donors = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="edit"
+                        size="xs"
+                        className="gap-1"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

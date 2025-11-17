@@ -43,6 +43,16 @@ export default {
           foreground: "hsl(var(--destructive-foreground))",
           light: "hsl(var(--destructive-light))",
         },
+        "button-dark": {
+          DEFAULT: "hsl(var(--button-dark))",
+          foreground: "hsl(var(--button-dark-foreground))",
+          hover: "hsl(var(--button-dark-hover))",
+        },
+        "button-light": {
+          DEFAULT: "hsl(var(--button-light))",
+          foreground: "hsl(var(--button-light-foreground))",
+          hover: "hsl(var(--button-light-hover))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
