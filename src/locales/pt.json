@@ -252,6 +252,23 @@
     "paymentMethodPlaceholder": "Ex: Dinheiro, PIX, Cartão",
     "cancel": "Cancelar",
     "save": "Salvar",
-    "saving": "Salvando..."
+    "saving": "Salvando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "edit": "Editar",
+    "delete": "Excluir"
+  },
+  "profile": {
+    "title": "Perfil",
+    "churchLogo": "Logo da Igreja",
+    "uploadLogo": "Enviar Logo",
+    "accountInfo": "Informações da Conta",
+    "email": "E-mail",
+    "fullName": "Nome Completo",
+    "fullNamePlaceholder": "Digite seu nome completo",
+    "churchName": "Nome da Igreja",
+    "churchNamePlaceholder": "Digite o nome da sua igreja",
+    "updateSuccess": "Perfil atualizado com sucesso!",
+    "updateError": "Erro ao atualizar perfil"
   }
 }

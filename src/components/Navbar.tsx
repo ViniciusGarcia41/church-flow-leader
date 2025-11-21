@@ -7,7 +7,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 import defaultChurchLogo from "@/assets/church-logo.jpeg";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { LogoUploader } from "@/components/LogoUploader";
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
@@ -21,6 +20,16 @@ const Navbar = () => {
     if (savedLogo) {
       setChurchLogo(savedLogo);
     }
+
+    const handleStorageChange = () => {
+      const updatedLogo = localStorage.getItem("churchledger-logo");
+      if (updatedLogo) {
+        setChurchLogo(updatedLogo);
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   const handleSignOut = async () => {
@@ -85,8 +94,12 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="container mx-auto flex h-16 items-center px-4 gap-3">
-        <Link to="/dashboard" className="flex items-center gap-3 min-w-0 shrink-0">
-          <LogoUploader currentLogo={churchLogo} onLogoChange={setChurchLogo} />
+        <Link to="/profile" className="flex items-center gap-3 min-w-0 shrink-0 hover:opacity-80 transition-opacity">
+          <img
+            src={churchLogo}
+            alt="Church Logo"
+            className="h-12 w-12 min-w-[40px] min-h-[40px] rounded-lg object-contain"
+          />
           <span className="text-xl font-bold hidden md:inline truncate">ChurchLedger</span>
         </Link>
 
