@@ -1,9 +1,11 @@
-import { useState, useRef } from "react";
-import { Upload, X } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Upload, X, Crop } from "lucide-react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import Cropper from "react-easy-crop";
+import { Point, Area } from "react-easy-crop";
 
 interface LogoUploaderProps {
   currentLogo: string;
@@ -16,6 +18,10 @@ export const LogoUploader = ({ currentLogo, onLogoChange }: LogoUploaderProps) =
   const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -48,20 +54,72 @@ export const LogoUploader = ({ currentLogo, onLogoChange }: LogoUploaderProps) =
     reader.readAsDataURL(file);
   };
 
-  const handleSaveLogo = () => {
-    if (previewLogo) {
-      const timestamp = Date.now();
-      onLogoChange(`${previewLogo}?v=${timestamp}`);
-      localStorage.setItem("churchledger-logo", previewLogo);
-      toast.success("Logo atualizada com sucesso!");
-      setIsModalOpen(false);
-      setPreviewLogo(null);
+  const onCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const createImage = (url: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.addEventListener("load", () => resolve(image));
+      image.addEventListener("error", (error) => reject(error));
+      image.src = url;
+    });
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string> => {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      throw new Error("No 2d context");
+    }
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return canvas.toDataURL("image/png");
+  };
+
+  const handleSaveLogo = async () => {
+    if (previewLogo && croppedAreaPixels) {
+      try {
+        setIsCropping(true);
+        const croppedImage = await getCroppedImg(previewLogo, croppedAreaPixels);
+        const timestamp = Date.now();
+        onLogoChange(`${croppedImage}?v=${timestamp}`);
+        localStorage.setItem("churchledger-logo", croppedImage);
+        toast.success("Logo atualizada com sucesso!");
+        setIsModalOpen(false);
+        setPreviewLogo(null);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+      } catch (error) {
+        console.error("Erro ao cortar imagem:", error);
+        toast.error("Erro ao processar imagem");
+      } finally {
+        setIsCropping(false);
+      }
     }
   };
 
   const handleCancelUpload = () => {
     setIsModalOpen(false);
     setPreviewLogo(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -102,27 +160,43 @@ export const LogoUploader = ({ currentLogo, onLogoChange }: LogoUploaderProps) =
       />
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Preview da Nova Logo</DialogTitle>
+            <DialogTitle>Ajustar e Cortar Logo</DialogTitle>
           </DialogHeader>
-          <div className="flex items-center justify-center p-6 bg-muted/20 rounded-lg">
+          <div className="relative w-full h-[400px] bg-muted/20 rounded-lg overflow-hidden">
             {previewLogo && (
-              <img
-                src={previewLogo}
-                alt="Preview"
-                className="max-h-48 max-w-full rounded-lg object-contain"
+              <Cropper
+                image={previewLogo}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
               />
             )}
           </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Zoom</label>
+            <input
+              type="range"
+              min={1}
+              max={3}
+              step={0.1}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={handleCancelUpload}>
+            <Button variant="outline" onClick={handleCancelUpload} disabled={isCropping}>
               <X className="h-4 w-4 mr-2" />
               Cancelar
             </Button>
-            <Button onClick={handleSaveLogo}>
-              <Upload className="h-4 w-4 mr-2" />
-              Salvar Logo
+            <Button onClick={handleSaveLogo} disabled={isCropping}>
+              <Crop className="h-4 w-4 mr-2" />
+              {isCropping ? "Processando..." : "Salvar Logo"}
             </Button>
           </DialogFooter>
         </DialogContent>
