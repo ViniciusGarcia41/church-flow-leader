@@ -325,33 +325,46 @@ const Donors = () => {
             {donors.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">{t("donors.none")}</p>
             ) : (
-              <div className="space-y-2 overflow-x-auto">
+              <div className="space-y-3">
                 {donors.map((donor) => (
                   <div
                     key={donor.id}
-                    className="flex flex-col sm:flex-row sm:items-start sm:justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors gap-3 min-w-[280px]"
+                    className="flex flex-col gap-4 p-4 sm:p-5 rounded-lg border border-border hover:bg-muted/50 transition-colors w-full"
                   >
-                    <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-                      <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="h-5 w-5 text-primary" />
+                    <div className="flex items-start gap-3 sm:gap-4 w-full">
+                      <div className="h-12 w-12 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-6 w-6 text-primary" />
                       </div>
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <p className="font-medium text-sm sm:text-base break-words">{donor.name}</p>
-                        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
-                          {donor.email && <span className="break-all">{donor.email}</span>}
-                          {donor.phone && <span className="whitespace-nowrap">{donor.email ? '• ' : ''}{donor.phone}</span>}
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <p className="font-semibold text-base sm:text-lg">{donor.name}</p>
+                        <div className="space-y-1">
+                          {donor.email && (
+                            <p className="text-sm text-muted-foreground break-all">
+                              {donor.email}
+                            </p>
+                          )}
+                          {donor.phone && (
+                            <p className="text-sm text-muted-foreground">
+                              {donor.phone}
+                            </p>
+                          )}
+                          {donor.address && (
+                            <p className="text-sm text-muted-foreground">
+                              {donor.address}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
                       <Button
                         variant="edit"
-                        size="xs"
-                        className="gap-1 flex-1 sm:flex-initial"
+                        size="sm"
+                        className="gap-2 flex-1 sm:flex-initial"
                         onClick={() => handleEdit(donor)}
                       >
-                        <Pencil className="h-3 w-3" />
-                        <span className="hidden sm:inline">Edit</span>
+                        <Pencil className="h-4 w-4" />
+                        Edit
                       </Button>
                       <Button
                         variant="outline"
@@ -360,15 +373,16 @@ const Donors = () => {
                         className="gap-2 flex-1 sm:flex-initial"
                       >
                         <FileText className="h-4 w-4" />
-                        <span className="hidden sm:inline">{t("donors.receipt")}</span>
+                        {t("donors.receipt")}
                       </Button>
                       <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         onClick={() => handleDelete(donor.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive-light flex-shrink-0"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
                       >
                         <Trash2 className="h-4 w-4" />
+                        Delete
                       </Button>
                     </div>
                   </div>
