@@ -234,20 +234,20 @@ const Donors = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto p-6 space-y-8">
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-4xl font-bold">{t("donors.title")}</h1>
-            <p className="text-muted-foreground">{t("donors.subtitle")}</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{t("donors.title")}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">{t("donors.subtitle")}</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 w-full sm:w-auto">
                 <Plus className="h-4 w-4" />
                 {t("donors.new")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t("donors.newTitle")}</DialogTitle>
               </DialogHeader>
@@ -264,7 +264,7 @@ const Donors = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">{t("donors.email")}</Label>
                     <Input
@@ -325,48 +325,48 @@ const Donors = () => {
             {donors.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">{t("donors.none")}</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 overflow-x-auto">
                 {donors.map((donor) => (
                   <div
                     key={donor.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-start sm:justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors gap-3 min-w-[280px]"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <User className="h-5 w-5" style={{ color: '#e4e1d2' }} />
+                    <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                      <div className="h-10 w-10 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="space-y-1">
-                        <p className="font-medium">{donor.name}</p>
-                        <div className="flex gap-4 text-sm text-muted-foreground">
-                          {donor.email && <span>{donor.email}</span>}
-                          {donor.phone && <span>• {donor.phone}</span>}
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <p className="font-medium text-sm sm:text-base break-words">{donor.name}</p>
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                          {donor.email && <span className="break-all">{donor.email}</span>}
+                          {donor.phone && <span className="whitespace-nowrap">{donor.email ? '• ' : ''}{donor.phone}</span>}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                    <Button
-                      variant="edit"
-                      size="xs"
-                      className="gap-1"
-                      onClick={() => handleEdit(donor)}
-                    >
-                      <Pencil className="h-3 w-3" />
-                      Edit
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2 sm:flex-shrink-0">
+                      <Button
+                        variant="edit"
+                        size="xs"
+                        className="gap-1 flex-1 sm:flex-initial"
+                        onClick={() => handleEdit(donor)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                        <span className="hidden sm:inline">Edit</span>
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => generateDonorReceipt(donor.id)}
-                        className="gap-2"
+                        className="gap-2 flex-1 sm:flex-initial"
                       >
                         <FileText className="h-4 w-4" />
-                        {t("donors.receipt")}
+                        <span className="hidden sm:inline">{t("donors.receipt")}</span>
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(donor.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive-light"
+                        className="text-destructive hover:text-destructive hover:bg-destructive-light flex-shrink-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
