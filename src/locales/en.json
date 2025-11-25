@@ -196,6 +196,8 @@
     "income": "Income",
     "expense": "Expense",
     "fileSize": "Size",
+    "chooseFile": "Choose file",
+    "noFileChosen": "No file chosen",
     "andMore": "and more"
   },
   "auth": {

@@ -196,6 +196,8 @@
     "income": "Receita",
     "expense": "Despesa",
     "fileSize": "Tamanho",
+    "chooseFile": "Escolher arquivo",
+    "noFileChosen": "Nenhum arquivo escolhido",
     "andMore": "e mais"
   },
   "auth": {
