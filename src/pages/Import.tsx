@@ -231,7 +231,7 @@ const Import = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="file">{t("import.supported")}</Label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                     <Input
                       id="file"
                       type="file"
@@ -241,11 +241,11 @@ const Import = () => {
                     />
                     <Label
                       htmlFor="file"
-                      className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+                      className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-8 py-2 min-w-[200px]"
                     >
                       {t("import.chooseFile")}
                     </Label>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground flex-1">
                       {file ? file.name : t("import.noFileChosen")}
                     </span>
                   </div>
@@ -271,7 +271,8 @@ const Import = () => {
                 <Button
                   onClick={handleProcessFile}
                   disabled={!file || loading}
-                  className="w-full"
+                  className="w-full sm:w-auto sm:min-w-[280px] sm:mx-auto sm:block"
+                  size="default"
                 >
                   {loading ? (
                     <>
