@@ -231,12 +231,24 @@ const Import = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="file">{t("import.supported")}</Label>
-                  <Input
-                    id="file"
-                    type="file"
-                    accept=".xlsx,.xls,.csv,.pdf"
-                    onChange={handleFileChange}
-                  />
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="file"
+                      type="file"
+                      accept=".xlsx,.xls,.csv,.pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <Label
+                      htmlFor="file"
+                      className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+                    >
+                      {t("import.chooseFile")}
+                    </Label>
+                    <span className="text-sm text-muted-foreground">
+                      {file ? file.name : t("import.noFileChosen")}
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     {t("import.supported")}
                   </p>
