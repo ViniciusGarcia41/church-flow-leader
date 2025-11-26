@@ -228,12 +228,12 @@ const Import = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  <Label htmlFor="file" className="text-sm text-muted-foreground">
-                    {t("import.supported")}
-                  </Label>
-                  <div className="flex flex-col items-center gap-3">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <Label htmlFor="file" className="text-sm font-medium text-muted-foreground block mb-4">
+                      {t("import.supported")}
+                    </Label>
                     <Input
                       id="file"
                       type="file"
@@ -243,13 +243,16 @@ const Import = () => {
                     />
                     <Label
                       htmlFor="file"
-                      className="cursor-pointer inline-flex items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-8 py-2 w-full max-w-[280px] shadow-sm"
+                      className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 h-12 px-6 w-full max-w-md mx-auto shadow-sm"
                     >
+                      <Upload className="h-5 w-5" />
                       {t("import.chooseFile")}
                     </Label>
-                    <span className="text-sm text-muted-foreground text-center">
-                      {file ? file.name : t("import.noFileChosen")}
-                    </span>
+                    {file && (
+                      <p className="text-sm text-muted-foreground mt-3 font-medium">
+                        {file.name}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -257,7 +260,7 @@ const Import = () => {
                   <Alert>
                     <FileSpreadsheet className="h-4 w-4" />
                     <AlertDescription>
-                  <div className="space-y-1">
+                      <div className="space-y-1">
                         <p className="font-semibold">{file.name}</p>
                         <p className="text-sm">
                           {t("import.fileSize")}: {(file.size / 1024).toFixed(2)} KB
@@ -267,26 +270,28 @@ const Import = () => {
                   </Alert>
                 )}
 
-                <div className="flex justify-center">
-                  <Button
-                    onClick={handleProcessFile}
-                    disabled={!file || loading}
-                    className="w-full max-w-[280px]"
-                    size="default"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        {t("import.processingFile")}
-                      </>
-                    ) : (
-                      <>
-                        <Eye className="h-4 w-4" />
-                        {t("import.processAndView")}
-                      </>
-                    )}
-                  </Button>
-                </div>
+                {file && (
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleProcessFile}
+                      disabled={!file || loading}
+                      className="w-full max-w-md h-11"
+                      size="lg"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          {t("import.processingFile")}
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-4 w-4 mr-2" />
+                          {t("import.processAndView")}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
 
               <div className="border-t pt-6">
@@ -480,18 +485,25 @@ const Import = () => {
                   </Table>
                 </div>
 
-                <div className="flex justify-end gap-4">
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                   <Button
                     variant="outline"
+                    size="lg"
                     onClick={() => {
                       setStep("upload");
                       setParseResult(null);
                       setEditedRecords([]);
                     }}
+                    className="w-full sm:w-auto min-w-[180px]"
                   >
                     {t("import.upload")}
                   </Button>
-                  <Button onClick={handleImport} disabled={loading || editedRecords.length === 0}>
+                  <Button 
+                    onClick={handleImport} 
+                    disabled={loading || editedRecords.length === 0}
+                    size="lg"
+                    className="w-full sm:w-auto min-w-[200px]"
+                  >
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -500,7 +512,7 @@ const Import = () => {
                     ) : (
                       <>
                         <Save className="h-4 w-4 mr-2" />
-                        {t("import.confirm")} ({editedRecords.length} {t("import.records")})
+                        {t("import.confirm")} ({editedRecords.length})
                       </>
                     )}
                   </Button>
