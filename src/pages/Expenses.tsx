@@ -170,23 +170,11 @@ const Expenses = () => {
     return t(categoryKey);
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
-          <p className="text-muted-foreground">{t("common.loading")}</p>
-        </div>
-      </div>
-    );
-  }
-
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
-  // Filter expenses
+  // Filter expenses - must be before any conditional returns
   const filteredExpenses = useMemo(() => {
     return expenses.filter((expense) => {
-      // Search filter
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = !searchTerm || 
         expense.description.toLowerCase().includes(searchLower) ||
@@ -195,10 +183,8 @@ const Expenses = () => {
         (expense.notes?.toLowerCase().includes(searchLower)) ||
         (expense.payment_method?.toLowerCase().includes(searchLower));
 
-      // Category filter
       const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
 
-      // Date filters
       const expenseDate = new Date(expense.expense_date);
       const matchesDateFrom = !dateFrom || expenseDate >= new Date(dateFrom);
       const matchesDateTo = !dateTo || expenseDate <= new Date(dateTo);
@@ -218,6 +204,17 @@ const Expenses = () => {
     { value: "supplies", label: t("expenses.categories.supplies") },
     { value: "other", label: t("expenses.categories.other") },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
