@@ -260,6 +260,17 @@
     "edit": "Editar",
     "delete": "Excluir"
   },
+  "filters": {
+    "searchPlaceholder": "Buscar por descrição, categoria, notas...",
+    "filters": "Filtros",
+    "clear": "Limpar",
+    "type": "Tipo",
+    "category": "Categoria",
+    "all": "Todos",
+    "from": "De",
+    "to": "Até",
+    "noResults": "Nenhum resultado encontrado"
+  },
   "profile": {
     "title": "Perfil",
     "churchLogo": "Logo da Igreja",
