@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
+import FilterBar from "@/components/FilterBar";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -34,6 +35,12 @@ const Expenses = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -176,6 +183,42 @@ const Expenses = () => {
 
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
+  // Filter expenses
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((expense) => {
+      // Search filter
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        expense.description.toLowerCase().includes(searchLower) ||
+        expense.category.toLowerCase().includes(searchLower) ||
+        (expense.vendor?.toLowerCase().includes(searchLower)) ||
+        (expense.notes?.toLowerCase().includes(searchLower)) ||
+        (expense.payment_method?.toLowerCase().includes(searchLower));
+
+      // Category filter
+      const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
+
+      // Date filters
+      const expenseDate = new Date(expense.expense_date);
+      const matchesDateFrom = !dateFrom || expenseDate >= new Date(dateFrom);
+      const matchesDateTo = !dateTo || expenseDate <= new Date(dateTo);
+
+      return matchesSearch && matchesCategory && matchesDateFrom && matchesDateTo;
+    });
+  }, [expenses, searchTerm, categoryFilter, dateFrom, dateTo]);
+
+  const filteredTotal = filteredExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+
+  const categoryOptions = [
+    { value: "salaries", label: t("expenses.categories.salaries") },
+    { value: "utilities", label: t("expenses.categories.utilities") },
+    { value: "maintenance", label: t("expenses.categories.maintenance") },
+    { value: "missions", label: t("expenses.categories.missions") },
+    { value: "events", label: t("expenses.categories.events") },
+    { value: "supplies", label: t("expenses.categories.supplies") },
+    { value: "other", label: t("expenses.categories.other") },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -307,18 +350,34 @@ const Expenses = () => {
           </CardContent>
         </Card>
 
+        {/* Filter Bar */}
+        <FilterBar
+          searchPlaceholder={t("filters.searchPlaceholder")}
+          onSearchChange={setSearchTerm}
+          onTypeFilterChange={setCategoryFilter}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          typeOptions={categoryOptions}
+          typeLabel={t("expenses.category")}
+        />
+
         <Card className="shadow-lg">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{t("expenses.history")}</CardTitle>
+            {(searchTerm || categoryFilter !== "all" || dateFrom || dateTo) && (
+              <span className="text-sm text-muted-foreground">
+                {filteredExpenses.length} {t("import.records")} • {formatCurrency(filteredTotal)}
+              </span>
+            )}
           </CardHeader>
           <CardContent>
-            {expenses.length === 0 ? (
+            {filteredExpenses.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                {t("expenses.none")}
+                {expenses.length === 0 ? t("expenses.none") : t("filters.noResults")}
               </p>
             ) : (
               <div className="space-y-2 overflow-x-auto">
-                {expenses.map((expense) => (
+                {filteredExpenses.map((expense) => (
                   <div
                     key={expense.id}
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors gap-3 min-w-[280px]"

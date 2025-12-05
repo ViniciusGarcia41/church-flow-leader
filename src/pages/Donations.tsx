@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
+import FilterBar from "@/components/FilterBar";
 import { Plus, Trash2, FileDown, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -45,6 +46,12 @@ const Donations = () => {
   const [selectedDonor, setSelectedDonor] = useState<string>("");
   const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -228,6 +235,39 @@ const Donations = () => {
 
   const totalDonations = donations.reduce((sum, d) => sum + Number(d.amount), 0);
 
+  // Filter donations
+  const filteredDonations = useMemo(() => {
+    return donations.filter((donation) => {
+      // Search filter
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        donation.donation_type.toLowerCase().includes(searchLower) ||
+        (donation.category?.toLowerCase().includes(searchLower)) ||
+        (donation.notes?.toLowerCase().includes(searchLower)) ||
+        (donation.donors?.name?.toLowerCase().includes(searchLower)) ||
+        (donation.payment_method?.toLowerCase().includes(searchLower));
+
+      // Type filter
+      const matchesType = typeFilter === "all" || donation.donation_type === typeFilter;
+
+      // Date filters
+      const donationDate = new Date(donation.donation_date);
+      const matchesDateFrom = !dateFrom || donationDate >= new Date(dateFrom);
+      const matchesDateTo = !dateTo || donationDate <= new Date(dateTo);
+
+      return matchesSearch && matchesType && matchesDateFrom && matchesDateTo;
+    });
+  }, [donations, searchTerm, typeFilter, dateFrom, dateTo]);
+
+  const filteredTotal = filteredDonations.reduce((sum, d) => sum + Number(d.amount), 0);
+
+  const donationTypeOptions = [
+    { value: "tithe", label: t("donations.types.tithe") },
+    { value: "offering", label: t("donations.types.offering") },
+    { value: "special_project", label: t("donations.types.special_project") },
+    { value: "campaign", label: t("donations.types.campaign") },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -379,18 +419,34 @@ const Donations = () => {
           </CardContent>
         </Card>
 
+        {/* Filter Bar */}
+        <FilterBar
+          searchPlaceholder={t("filters.searchPlaceholder")}
+          onSearchChange={setSearchTerm}
+          onTypeFilterChange={setTypeFilter}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          typeOptions={donationTypeOptions}
+          typeLabel={t("donations.type")}
+        />
+
         <Card className="shadow-lg">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{t("donations.history")}</CardTitle>
+            {(searchTerm || typeFilter !== "all" || dateFrom || dateTo) && (
+              <span className="text-sm text-muted-foreground">
+                {filteredDonations.length} {t("import.records")} • {formatCurrency(filteredTotal)}
+              </span>
+            )}
           </CardHeader>
           <CardContent>
-            {donations.length === 0 ? (
+            {filteredDonations.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                {t("donations.none")}
+                {donations.length === 0 ? t("donations.none") : t("filters.noResults")}
               </p>
             ) : (
               <div className="space-y-2 overflow-x-auto">
-                {donations.map((donation) => (
+                {filteredDonations.map((donation) => (
                   <div
                     key={donation.id}
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors gap-3 min-w-[280px]"

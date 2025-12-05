@@ -260,6 +260,17 @@
     "edit": "Edit",
     "delete": "Delete"
   },
+  "filters": {
+    "searchPlaceholder": "Search by description, category, notes...",
+    "filters": "Filters",
+    "clear": "Clear",
+    "type": "Type",
+    "category": "Category",
+    "all": "All",
+    "from": "From",
+    "to": "To",
+    "noResults": "No results found"
+  },
   "profile": {
     "title": "Profile",
     "churchLogo": "Church Logo",
