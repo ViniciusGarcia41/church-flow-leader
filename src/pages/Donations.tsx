@@ -222,23 +222,11 @@ const Donations = () => {
     toast.success(t("donations.exportSuccess"));
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
-          <p className="text-muted-foreground">{t("common.loading")}</p>
-        </div>
-      </div>
-    );
-  }
-
   const totalDonations = donations.reduce((sum, d) => sum + Number(d.amount), 0);
 
-  // Filter donations
+  // Filter donations - must be before any conditional returns
   const filteredDonations = useMemo(() => {
     return donations.filter((donation) => {
-      // Search filter
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = !searchTerm || 
         donation.donation_type.toLowerCase().includes(searchLower) ||
@@ -247,10 +235,8 @@ const Donations = () => {
         (donation.donors?.name?.toLowerCase().includes(searchLower)) ||
         (donation.payment_method?.toLowerCase().includes(searchLower));
 
-      // Type filter
       const matchesType = typeFilter === "all" || donation.donation_type === typeFilter;
 
-      // Date filters
       const donationDate = new Date(donation.donation_date);
       const matchesDateFrom = !dateFrom || donationDate >= new Date(dateFrom);
       const matchesDateTo = !dateTo || donationDate <= new Date(dateTo);
@@ -267,6 +253,17 @@ const Donations = () => {
     { value: "special_project", label: t("donations.types.special_project") },
     { value: "campaign", label: t("donations.types.campaign") },
   ];
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
