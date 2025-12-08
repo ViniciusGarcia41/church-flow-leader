@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ExchangeRate {
@@ -6,8 +6,8 @@ interface ExchangeRate {
   lastUpdate: Date;
 }
 
-const FALLBACK_RATE = 5.31;
-const CACHE_DURATION = 3600000; // 1 hour in milliseconds
+const FALLBACK_RATE = 6.05; // Updated fallback rate (Dec 2025)
+const CACHE_DURATION = 900000; // 15 minutes in milliseconds for fresher rates
 
 export const useCurrency = () => {
   const { language } = useLanguage();
@@ -16,11 +16,11 @@ export const useCurrency = () => {
     lastUpdate: new Date(),
   });
 
-  useEffect(() => {
-    const fetchExchangeRate = async () => {
-      try {
-        // Check cache first
-        const cached = localStorage.getItem("exchange-rate");
+  const fetchExchangeRate = useCallback(async (forceRefresh = false) => {
+    try {
+      // Check cache first (unless forcing refresh)
+      if (!forceRefresh) {
+        const cached = localStorage.getItem("exchange-rate-v2");
         if (cached) {
           const parsed = JSON.parse(cached);
           const cacheAge = Date.now() - new Date(parsed.lastUpdate).getTime();
@@ -33,38 +33,81 @@ export const useCurrency = () => {
             return;
           }
         }
+      }
 
-        // Fetch new rate from API
+      // Try primary API - ExchangeRate-API (free, reliable)
+      let rate: number | null = null;
+      
+      try {
         const response = await fetch(
-          "https://api.exchangerate-api.com/v4/latest/BRL"
+          "https://api.exchangerate-api.com/v4/latest/USD"
         );
         
-        if (!response.ok) throw new Error("API error");
-        
-        const data = await response.json();
-        const rate = 1 / data.rates.USD; // BRL to USD rate
-        
+        if (response.ok) {
+          const data = await response.json();
+          // Get how many BRL = 1 USD
+          rate = data.rates.BRL;
+        }
+      } catch (primaryError) {
+        console.warn("Primary API failed, trying fallback...", primaryError);
+      }
+
+      // Fallback to secondary API if primary fails
+      if (!rate) {
+        try {
+          const fallbackResponse = await fetch(
+            "https://open.er-api.com/v6/latest/USD"
+          );
+          
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json();
+            rate = fallbackData.rates.BRL;
+          }
+        } catch (fallbackError) {
+          console.warn("Fallback API also failed", fallbackError);
+        }
+      }
+
+      if (rate) {
         const newRate = {
-          rate: parseFloat(rate.toFixed(2)),
+          rate: parseFloat(rate.toFixed(4)), // More precision for accuracy
           lastUpdate: new Date(),
         };
         
         setExchangeRate(newRate);
-        localStorage.setItem("exchange-rate", JSON.stringify(newRate));
-      } catch (error) {
-        console.error("Error fetching exchange rate:", error);
-        // Use fallback rate
-        const fallbackData = {
+        localStorage.setItem("exchange-rate-v2", JSON.stringify(newRate));
+      } else {
+        throw new Error("All APIs failed");
+      }
+    } catch (error) {
+      console.error("Error fetching exchange rate:", error);
+      // Use cached rate if available, otherwise fallback
+      const cached = localStorage.getItem("exchange-rate-v2");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setExchangeRate({
+          rate: parsed.rate,
+          lastUpdate: new Date(parsed.lastUpdate),
+        });
+      } else {
+        setExchangeRate({
           rate: FALLBACK_RATE,
           lastUpdate: new Date(),
-        };
-        setExchangeRate(fallbackData);
-        localStorage.setItem("exchange-rate", JSON.stringify(fallbackData));
+        });
       }
-    };
-
-    fetchExchangeRate();
+    }
   }, []);
+
+  useEffect(() => {
+    fetchExchangeRate();
+    
+    // Refresh rate every 15 minutes while app is open
+    const interval = setInterval(() => {
+      fetchExchangeRate(true);
+    }, CACHE_DURATION);
+
+    return () => clearInterval(interval);
+  }, [fetchExchangeRate]);
 
   const formatCurrency = (value: number): string => {
     if (language === "pt") {
@@ -73,6 +116,7 @@ export const useCurrency = () => {
         currency: "BRL",
       }).format(value);
     } else {
+      // Convert BRL to USD: divide by rate (rate = how many BRL per 1 USD)
       const usdValue = value / exchangeRate.rate;
       return new Intl.NumberFormat("en-US", {
         style: "currency",
@@ -89,11 +133,16 @@ export const useCurrency = () => {
     return usdValue * exchangeRate.rate;
   };
 
+  const refreshRate = () => {
+    fetchExchangeRate(true);
+  };
+
   return {
     formatCurrency,
     exchangeRate: exchangeRate.rate,
     lastUpdate: exchangeRate.lastUpdate,
     convertToUSD,
     convertToBRL,
+    refreshRate,
   };
 };
