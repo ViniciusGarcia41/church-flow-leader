@@ -403,7 +403,7 @@ const Expenses = () => {
                         onClick={() => handleEdit(expense)}
                       >
                         <Pencil className="h-3 w-3" />
-                        Edit
+                        {t("common.edit")}
                       </Button>
                         <Button
                           variant="ghost"

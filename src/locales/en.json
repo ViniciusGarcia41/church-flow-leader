@@ -63,6 +63,15 @@
       "offering": "Offering",
       "special_project": "Special Project",
       "campaign": "Campaign"
+    },
+    "paymentMethods": {
+      "cash": "Cash",
+      "check": "Check",
+      "bank_transfer": "Bank Transfer",
+      "credit_card": "Credit Card",
+      "debit_card": "Debit Card",
+      "pix": "PIX",
+      "other": "Other"
     }
   },
   "expenses": {
@@ -101,6 +110,15 @@
       "missions": "Missions",
       "events": "Events",
       "supplies": "Supplies",
+      "other": "Other"
+    },
+    "paymentMethods": {
+      "cash": "Cash",
+      "check": "Check",
+      "bank_transfer": "Bank Transfer",
+      "credit_card": "Credit Card",
+      "debit_card": "Debit Card",
+      "pix": "PIX",
       "other": "Other"
     }
   },
