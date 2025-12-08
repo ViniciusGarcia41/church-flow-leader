@@ -63,6 +63,15 @@
       "offering": "Oferta",
       "special_project": "Projeto Especial",
       "campaign": "Campanha"
+    },
+    "paymentMethods": {
+      "cash": "Dinheiro",
+      "check": "Cheque",
+      "bank_transfer": "Transferência Bancária",
+      "credit_card": "Cartão de Crédito",
+      "debit_card": "Cartão de Débito",
+      "pix": "PIX",
+      "other": "Outro"
     }
   },
   "expenses": {
@@ -102,6 +111,15 @@
       "events": "Eventos",
       "supplies": "Materiais",
       "other": "Outros"
+    },
+    "paymentMethods": {
+      "cash": "Dinheiro",
+      "check": "Cheque",
+      "bank_transfer": "Transferência Bancária",
+      "credit_card": "Cartão de Crédito",
+      "debit_card": "Cartão de Débito",
+      "pix": "PIX",
+      "other": "Outro"
     }
   },
   "donors": {
