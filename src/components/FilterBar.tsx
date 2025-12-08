@@ -81,7 +81,7 @@ const FilterBar = ({
             placeholder={searchPlaceholder || t("filters.searchPlaceholder")}
             value={searchValue}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="pl-10 h-10"
+            className="pl-10 h-10 bg-input-bg"
           />
         </div>
         
@@ -112,14 +112,14 @@ const FilterBar = ({
 
       {/* Expanded filters */}
       {isExpanded && (
-        <div className="flex flex-col sm:flex-row gap-3 p-4 rounded-lg border border-border bg-muted/30 animate-in slide-in-from-top-2 duration-200">
+        <div className="flex flex-col sm:flex-row gap-3 p-4 rounded-lg border border-border bg-input-bg animate-in slide-in-from-top-2 duration-200">
           {typeOptions && typeOptions.length > 0 && (
             <div className="flex flex-col gap-1.5 flex-1 min-w-[150px]">
               <label className="text-xs font-medium text-muted-foreground">
                 {typeLabel || t("filters.type")}
               </label>
               <Select value={typeValue} onValueChange={handleTypeChange}>
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-9 bg-input-bg">
                   <SelectValue placeholder={t("filters.all")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -145,7 +145,7 @@ const FilterBar = ({
                   type="date"
                   value={dateFrom}
                   onChange={(e) => handleDateFromChange(e.target.value)}
-                  className="h-9"
+                  className="h-9 bg-input-bg"
                 />
               </div>
               <div className="flex flex-col gap-1.5 flex-1 min-w-[140px]">
@@ -157,7 +157,7 @@ const FilterBar = ({
                   type="date"
                   value={dateTo}
                   onChange={(e) => handleDateToChange(e.target.value)}
-                  className="h-9"
+                  className="h-9 bg-input-bg"
                 />
               </div>
             </>
