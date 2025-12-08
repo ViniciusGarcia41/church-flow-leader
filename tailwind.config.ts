@@ -48,11 +48,17 @@ export default {
           foreground: "hsl(var(--button-dark-foreground))",
           hover: "hsl(var(--button-dark-hover))",
         },
+        "button-secondary": {
+          DEFAULT: "hsl(var(--button-secondary))",
+          foreground: "hsl(var(--button-secondary-foreground))",
+          hover: "hsl(var(--button-secondary-hover))",
+        },
         "button-light": {
           DEFAULT: "hsl(var(--button-light))",
           foreground: "hsl(var(--button-light-foreground))",
           hover: "hsl(var(--button-light-hover))",
         },
+        "input-bg": "hsl(var(--input-bg))",
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",

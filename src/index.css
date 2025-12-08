@@ -42,11 +42,16 @@ All colors MUST be HSL.
     --destructive-foreground: 0 0% 100%;
     --destructive-light: 0 84% 96%;
 
-    --button-dark: 217 19% 27%;
-    --button-dark-foreground: 210 20% 98%;
-    --button-dark-hover: 217 19% 35%;
+    --button-dark: 220 13% 14%;
+    --button-dark-foreground: 0 0% 100%;
+    --button-dark-hover: 220 13% 22%;
+
+    --button-secondary: 215 14% 34%;
+    --button-secondary-foreground: 0 0% 100%;
+    --button-secondary-hover: 215 14% 42%;
 
     --border: 214 15% 35%;
+    --input-bg: 0 0% 100%;
     --input: 214 15% 30%;
     --ring: 214 25% 40%;
 
@@ -112,15 +117,20 @@ All colors MUST be HSL.
     --destructive-foreground: 0 0% 100%;
     --destructive-light: 0 84% 96%;
 
-    --button-dark: 217 19% 27%;
-    --button-dark-foreground: 210 20% 98%;
-    --button-dark-hover: 217 19% 35%;
+    --button-dark: 220 13% 14%;
+    --button-dark-foreground: 0 0% 100%;
+    --button-dark-hover: 220 13% 22%;
+
+    --button-secondary: 215 14% 34%;
+    --button-secondary-foreground: 0 0% 100%;
+    --button-secondary-hover: 215 14% 42%;
 
     --button-light: 210 17% 91%;
     --button-light-foreground: 220 13% 9%;
     --button-light-hover: 220 9% 82%;
 
     --border: 214 15% 75%;
+    --input-bg: 0 0% 100%;
     --input: 214 15% 85%;
     --ring: 214 25% 60%;
 
@@ -173,12 +183,21 @@ All colors MUST be HSL.
     --destructive-foreground: 0 0% 100%;
     --destructive-light: 0 84% 96%;
 
+    --button-dark: 220 13% 14%;
+    --button-dark-foreground: 0 0% 100%;
+    --button-dark-hover: 220 13% 22%;
+
+    --button-secondary: 215 14% 34%;
+    --button-secondary-foreground: 0 0% 100%;
+    --button-secondary-hover: 215 14% 42%;
+
     --button-light: 210 17% 91%;
     --button-light-foreground: 220 13% 9%;
     --button-light-hover: 220 9% 82%;
 
     --border: 214 15% 25%;
     --input: 214 15% 20%;
+    --input-bg: 214 20% 28%;
     --ring: 214 25% 30%;
 
     --accent: 214 25% 32%;
