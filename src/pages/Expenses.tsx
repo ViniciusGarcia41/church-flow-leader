@@ -417,10 +417,10 @@ const Expenses = () => {
                         {t("common.edit")}
                       </Button>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="icon"
                           onClick={() => handleDeleteClick(expense.id)}
-                          className="bg-muted hover:bg-muted/80 text-destructive hover:text-destructive flex-shrink-0"
+                          className="bg-[#6e6e6e] hover:bg-[#a1a1a1] text-white border-[#6e6e6e] hover:border-[#a1a1a1] flex-shrink-0"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -445,7 +445,7 @@ const Expenses = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-2 sm:gap-0">
-              <AlertDialogCancel className="bg-muted hover:bg-muted/80 text-foreground border-0">
+              <AlertDialogCancel className="bg-[#6e6e6e] hover:bg-[#a1a1a1] text-white hover:text-white border-0">
                 {t("common.no")}
               </AlertDialogCancel>
               <AlertDialogAction

@@ -10,6 +10,16 @@ import Navbar from "@/components/Navbar";
 import { Plus, Trash2, User, FileText, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -32,6 +42,8 @@ const Donors = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingDonor, setEditingDonor] = useState<Donor | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [donorToDelete, setDonorToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -90,11 +102,16 @@ const Donors = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t("donors.deleteConfirm"))) return;
+  const handleDeleteClick = (id: string) => {
+    setDonorToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!donorToDelete) return;
 
     try {
-      const { error } = await supabase.from("donors").delete().eq("id", id);
+      const { error } = await supabase.from("donors").delete().eq("id", donorToDelete);
 
       if (error) throw error;
 
@@ -104,6 +121,9 @@ const Donors = () => {
       toast.error(t("donors.deleteError"), {
         description: error.message,
       });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDonorToDelete(null);
     }
   };
 
@@ -376,13 +396,13 @@ const Donors = () => {
                         {t("donors.receipt")}
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(donor.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
+                        onClick={() => handleDeleteClick(donor.id)}
+                        className="bg-[#6e6e6e] text-white border-[#6e6e6e] hover:bg-[#a1a1a1] hover:border-[#a1a1a1] gap-2"
                       >
                         <Trash2 className="h-4 w-4" />
-                        Delete
+                        {t("common.delete")}
                       </Button>
                     </div>
                   </div>
@@ -391,6 +411,29 @@ const Donors = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="bg-card">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground">{t("common.confirmDelete")}</AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                {t("donors.deleteConfirm")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-[#6e6e6e] text-white border-[#6e6e6e] hover:bg-[#a1a1a1] hover:text-white hover:border-[#a1a1a1]">
+                {t("common.no")}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {t("common.yes")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Edit Donor Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
