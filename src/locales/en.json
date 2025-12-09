@@ -276,7 +276,11 @@
     "error": "Error",
     "success": "Success",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "confirmDeleteTitle": "Confirm Deletion",
+    "confirmDeleteDescription": "This action cannot be undone. Do you want to continue?",
+    "yes": "Yes, delete",
+    "no": "No, cancel"
   },
   "filters": {
     "searchPlaceholder": "Search by description, category, notes...",
