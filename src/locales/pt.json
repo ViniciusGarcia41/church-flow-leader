@@ -276,7 +276,11 @@
     "error": "Erro",
     "success": "Sucesso",
     "edit": "Editar",
-    "delete": "Excluir"
+    "delete": "Excluir",
+    "confirmDeleteTitle": "Confirmar Exclusão",
+    "confirmDeleteDescription": "Esta ação não pode ser desfeita. Deseja continuar?",
+    "yes": "Sim, excluir",
+    "no": "Não, cancelar"
   },
   "filters": {
     "searchPlaceholder": "Buscar por descrição, categoria, notas...",

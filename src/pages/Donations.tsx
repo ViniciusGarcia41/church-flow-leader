@@ -13,6 +13,7 @@ import FilterBar from "@/components/FilterBar";
 import { Plus, Trash2, FileDown, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import * as XLSX from "xlsx";
 
@@ -46,6 +47,8 @@ const Donations = () => {
   const [selectedDonor, setSelectedDonor] = useState<string>("");
   const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [donationToDelete, setDonationToDelete] = useState<string | null>(null);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -133,11 +136,16 @@ const Donations = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t("donations.deleteConfirm"))) return;
+  const handleDeleteClick = (id: string) => {
+    setDonationToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!donationToDelete) return;
 
     try {
-      const { error } = await supabase.from("donations").delete().eq("id", id);
+      const { error } = await supabase.from("donations").delete().eq("id", donationToDelete);
 
       if (error) throw error;
 
@@ -147,6 +155,9 @@ const Donations = () => {
       toast.error(t("donations.deleteError"), {
         description: error.message,
       });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDonationToDelete(null);
     }
   };
 
@@ -476,8 +487,8 @@ const Donations = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDelete(donation.id)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive-light flex-shrink-0"
+                          onClick={() => handleDeleteClick(donation.id)}
+                          className="bg-muted hover:bg-muted/80 text-destructive hover:text-destructive flex-shrink-0"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -489,6 +500,31 @@ const Donations = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent className="bg-background border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-foreground text-lg font-semibold">
+                {t("common.confirmDeleteTitle")}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
+                {t("donations.deleteConfirm")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel className="bg-muted hover:bg-muted/80 text-foreground border-0">
+                {t("common.no")}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                className="bg-destructive hover:bg-destructive/90 text-white border-0"
+              >
+                {t("common.yes")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Edit Donation Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
