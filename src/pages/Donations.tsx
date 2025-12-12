@@ -49,6 +49,7 @@ const Donations = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [donationToDelete, setDonationToDelete] = useState<string | null>(null);
+  const [editPaymentMethod, setEditPaymentMethod] = useState<string>("");
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -164,6 +165,7 @@ const Donations = () => {
   const handleEdit = (donation: Donation) => {
     setEditingDonation(donation);
     setSelectedDonor(donation.donor_id || "anonymous");
+    setEditPaymentMethod(donation.payment_method || "");
     setIsEditDialogOpen(true);
   };
 
@@ -178,7 +180,7 @@ const Donations = () => {
       amount: parseFloat(formData.get("amount") as string),
       donation_type: formData.get("donation_type") as "tithe" | "offering" | "special_project" | "campaign",
       category: formData.get("category") as string || null,
-      payment_method: formData.get("payment_method") as string || null,
+      payment_method: editPaymentMethod || null,
       notes: formData.get("notes") as string || null,
       donation_date: formData.get("donation_date") as string,
     };
@@ -195,6 +197,7 @@ const Donations = () => {
       setIsEditDialogOpen(false);
       setEditingDonation(null);
       setSelectedDonor("");
+      setEditPaymentMethod("");
       fetchDonations();
     } catch (error: any) {
       toast.error(t("donations.updateError"), {
@@ -589,19 +592,13 @@ const Donations = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="edit-payment_method">{t("donations.paymentMethod")}</Label>
-                  <Select name="payment_method" defaultValue={editingDonation?.payment_method || ""}>
-                    <SelectTrigger id="edit-payment_method">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">{t("donations.paymentMethods.cash")}</SelectItem>
-                      <SelectItem value="check">{t("donations.paymentMethods.check")}</SelectItem>
-                      <SelectItem value="bank_transfer">{t("donations.paymentMethods.bank_transfer")}</SelectItem>
-                      <SelectItem value="credit_card">{t("donations.paymentMethods.credit_card")}</SelectItem>
-                      <SelectItem value="pix">{t("donations.paymentMethods.pix")}</SelectItem>
-                      <SelectItem value="other">{t("donations.paymentMethods.other")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="edit-payment_method"
+                    name="payment_method"
+                    value={editPaymentMethod}
+                    onChange={(e) => setEditPaymentMethod(e.target.value)}
+                    placeholder={t("common.paymentMethodPlaceholder")}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -633,6 +630,7 @@ const Donations = () => {
                     setIsEditDialogOpen(false);
                     setEditingDonation(null);
                     setSelectedDonor("");
+                    setEditPaymentMethod("");
                   }}
                   disabled={isSubmitting}
                 >

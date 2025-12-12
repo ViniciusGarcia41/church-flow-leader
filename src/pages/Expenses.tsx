@@ -38,6 +38,7 @@ const Expenses = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  const [editPaymentMethod, setEditPaymentMethod] = useState<string>("");
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -131,6 +132,7 @@ const Expenses = () => {
 
   const handleEdit = (expense: Expense) => {
     setEditingExpense(expense);
+    setEditPaymentMethod(expense.payment_method || "");
     setIsEditDialogOpen(true);
   };
 
@@ -144,7 +146,7 @@ const Expenses = () => {
       description: formData.get("description") as string,
       amount: parseFloat(formData.get("amount") as string),
       category: formData.get("category") as "salaries" | "utilities" | "maintenance" | "missions" | "events" | "supplies" | "other",
-      payment_method: formData.get("payment_method") as string || null,
+      payment_method: editPaymentMethod || null,
       vendor: formData.get("vendor") as string || null,
       notes: formData.get("notes") as string || null,
       expense_date: formData.get("expense_date") as string,
@@ -161,6 +163,7 @@ const Expenses = () => {
       toast.success(t("expenses.updateSuccess"));
       setIsEditDialogOpen(false);
       setEditingExpense(null);
+      setEditPaymentMethod("");
       fetchExpenses();
     } catch (error: any) {
       toast.error(t("expenses.updateError"), {
@@ -508,19 +511,13 @@ const Expenses = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="edit-payment_method">{t("expenses.paymentMethod")}</Label>
-                  <Select name="payment_method" defaultValue={editingExpense?.payment_method || ""}>
-                    <SelectTrigger id="edit-payment_method">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">{t("expenses.paymentMethods.cash")}</SelectItem>
-                      <SelectItem value="check">{t("expenses.paymentMethods.check")}</SelectItem>
-                      <SelectItem value="bank_transfer">{t("expenses.paymentMethods.bank_transfer")}</SelectItem>
-                      <SelectItem value="credit_card">{t("expenses.paymentMethods.credit_card")}</SelectItem>
-                      <SelectItem value="pix">{t("expenses.paymentMethods.pix")}</SelectItem>
-                      <SelectItem value="other">{t("expenses.paymentMethods.other")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="edit-payment_method"
+                    name="payment_method"
+                    value={editPaymentMethod}
+                    onChange={(e) => setEditPaymentMethod(e.target.value)}
+                    placeholder={t("common.paymentMethodPlaceholder")}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -560,6 +557,7 @@ const Expenses = () => {
                   onClick={() => {
                     setIsEditDialogOpen(false);
                     setEditingExpense(null);
+                    setEditPaymentMethod("");
                   }}
                   disabled={isSubmitting}
                 >
