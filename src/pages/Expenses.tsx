@@ -130,10 +130,28 @@ const Expenses = () => {
     }
   };
 
+  const getPaymentMethodKey = (method: string | null): string => {
+    if (!method) return "";
+    const lowerMethod = method.toLowerCase();
+    if (lowerMethod.includes("dinheiro") || lowerMethod.includes("cash")) return "cash";
+    if (lowerMethod.includes("cheque") || lowerMethod.includes("check")) return "check";
+    if (lowerMethod.includes("transferência") || lowerMethod.includes("transfer")) return "bank_transfer";
+    if (lowerMethod.includes("crédito") || lowerMethod.includes("credit")) return "credit_card";
+    if (lowerMethod.includes("débito") || lowerMethod.includes("debit")) return "debit_card";
+    if (lowerMethod.includes("pix")) return "pix";
+    return "other";
+  };
+
   const handleEdit = (expense: Expense) => {
     setEditingExpense(expense);
-    setEditPaymentMethod(expense.payment_method || "");
+    setEditPaymentMethod(expense.payment_method ? getPaymentMethodKey(expense.payment_method) : "");
     setIsEditDialogOpen(true);
+  };
+
+  const getPaymentMethodLabel = (key: string): string => {
+    if (!key) return "";
+    const translationKey = `expenses.paymentMethods.${key}` as const;
+    return t(translationKey);
   };
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -146,7 +164,7 @@ const Expenses = () => {
       description: formData.get("description") as string,
       amount: parseFloat(formData.get("amount") as string),
       category: formData.get("category") as "salaries" | "utilities" | "maintenance" | "missions" | "events" | "supplies" | "other",
-      payment_method: editPaymentMethod || null,
+      payment_method: editPaymentMethod ? getPaymentMethodLabel(editPaymentMethod) : null,
       vendor: formData.get("vendor") as string || null,
       notes: formData.get("notes") as string || null,
       expense_date: formData.get("expense_date") as string,
@@ -511,13 +529,20 @@ const Expenses = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="edit-payment_method">{t("expenses.paymentMethod")}</Label>
-                  <Input
-                    id="edit-payment_method"
-                    name="payment_method"
-                    value={editPaymentMethod}
-                    onChange={(e) => setEditPaymentMethod(e.target.value)}
-                    placeholder={t("common.paymentMethodPlaceholder")}
-                  />
+                  <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod}>
+                    <SelectTrigger id="edit-payment_method">
+                      <SelectValue placeholder={t("expenses.paymentMethod")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">{t("expenses.paymentMethods.cash")}</SelectItem>
+                      <SelectItem value="check">{t("expenses.paymentMethods.check")}</SelectItem>
+                      <SelectItem value="bank_transfer">{t("expenses.paymentMethods.bank_transfer")}</SelectItem>
+                      <SelectItem value="credit_card">{t("expenses.paymentMethods.credit_card")}</SelectItem>
+                      <SelectItem value="debit_card">{t("expenses.paymentMethods.debit_card")}</SelectItem>
+                      <SelectItem value="pix">{t("expenses.paymentMethods.pix")}</SelectItem>
+                      <SelectItem value="other">{t("expenses.paymentMethods.other")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
