@@ -162,11 +162,29 @@ const Donations = () => {
     }
   };
 
+  const getPaymentMethodKey = (method: string | null): string => {
+    if (!method) return "";
+    const lowerMethod = method.toLowerCase();
+    if (lowerMethod.includes("dinheiro") || lowerMethod.includes("cash")) return "cash";
+    if (lowerMethod.includes("cheque") || lowerMethod.includes("check")) return "check";
+    if (lowerMethod.includes("transferência") || lowerMethod.includes("transfer")) return "bank_transfer";
+    if (lowerMethod.includes("crédito") || lowerMethod.includes("credit")) return "credit_card";
+    if (lowerMethod.includes("débito") || lowerMethod.includes("debit")) return "debit_card";
+    if (lowerMethod.includes("pix")) return "pix";
+    return "other";
+  };
+
   const handleEdit = (donation: Donation) => {
     setEditingDonation(donation);
     setSelectedDonor(donation.donor_id || "anonymous");
-    setEditPaymentMethod(donation.payment_method || "");
+    setEditPaymentMethod(donation.payment_method ? getPaymentMethodKey(donation.payment_method) : "");
     setIsEditDialogOpen(true);
+  };
+
+  const getPaymentMethodLabel = (key: string): string => {
+    if (!key) return "";
+    const translationKey = `donations.paymentMethods.${key}` as const;
+    return t(translationKey);
   };
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -180,7 +198,7 @@ const Donations = () => {
       amount: parseFloat(formData.get("amount") as string),
       donation_type: formData.get("donation_type") as "tithe" | "offering" | "special_project" | "campaign",
       category: formData.get("category") as string || null,
-      payment_method: editPaymentMethod || null,
+      payment_method: editPaymentMethod ? getPaymentMethodLabel(editPaymentMethod) : null,
       notes: formData.get("notes") as string || null,
       donation_date: formData.get("donation_date") as string,
     };
@@ -592,13 +610,20 @@ const Donations = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="edit-payment_method">{t("donations.paymentMethod")}</Label>
-                  <Input
-                    id="edit-payment_method"
-                    name="payment_method"
-                    value={editPaymentMethod}
-                    onChange={(e) => setEditPaymentMethod(e.target.value)}
-                    placeholder={t("common.paymentMethodPlaceholder")}
-                  />
+                  <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod}>
+                    <SelectTrigger id="edit-payment_method">
+                      <SelectValue placeholder={t("donations.paymentMethod")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">{t("donations.paymentMethods.cash")}</SelectItem>
+                      <SelectItem value="check">{t("donations.paymentMethods.check")}</SelectItem>
+                      <SelectItem value="bank_transfer">{t("donations.paymentMethods.bank_transfer")}</SelectItem>
+                      <SelectItem value="credit_card">{t("donations.paymentMethods.credit_card")}</SelectItem>
+                      <SelectItem value="debit_card">{t("donations.paymentMethods.debit_card")}</SelectItem>
+                      <SelectItem value="pix">{t("donations.paymentMethods.pix")}</SelectItem>
+                      <SelectItem value="other">{t("donations.paymentMethods.other")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
