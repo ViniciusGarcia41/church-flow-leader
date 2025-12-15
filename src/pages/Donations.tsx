@@ -496,15 +496,13 @@ const Donations = () => {
                         {formatCurrency(Number(donation.amount))}
                       </p>
                       <div className="flex items-center gap-2">
-                      <Button
-                        variant="edit"
-                        size="xs"
-                        className="gap-1"
-                        onClick={() => handleEdit(donation)}
-                      >
-                        <Pencil className="h-3 w-3" />
-                        {t("common.edit")}
-                      </Button>
+                        <Button
+                          variant="edit"
+                          size="icon"
+                          onClick={() => handleEdit(donation)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="icon"

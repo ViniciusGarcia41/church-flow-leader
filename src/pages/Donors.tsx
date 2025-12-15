@@ -379,30 +379,25 @@ const Donors = () => {
                     <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
                       <Button
                         variant="edit"
-                        size="sm"
-                        className="gap-2 flex-1 sm:flex-initial"
+                        size="icon"
                         onClick={() => handleEdit(donor)}
                       >
                         <Pencil className="h-4 w-4" />
-                        Edit
                       </Button>
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         onClick={() => generateDonorReceipt(donor.id)}
-                        className="gap-2 flex-1 sm:flex-initial"
                       >
                         <FileText className="h-4 w-4" />
-                        {t("donors.receipt")}
                       </Button>
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         onClick={() => handleDeleteClick(donor.id)}
-                        className="bg-[#6e6e6e] text-white border-[#6e6e6e] hover:bg-[#a1a1a1] hover:border-[#a1a1a1] gap-2"
+                        className="bg-[#6e6e6e] text-white border-[#6e6e6e] hover:bg-[#a1a1a1] hover:border-[#a1a1a1]"
                       >
                         <Trash2 className="h-4 w-4" />
-                        {t("common.delete")}
                       </Button>
                     </div>
                   </div>

@@ -10,7 +10,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
 import FilterBar from "@/components/FilterBar";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, FileDown } from "lucide-react";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -202,6 +203,24 @@ const Expenses = () => {
     return t(categoryKey);
   };
 
+  const exportToExcel = () => {
+    const data = expenses.map((e) => ({
+      [t("expenses.date")]: formatDate(e.expense_date),
+      [t("expenses.description")]: e.description,
+      [t("expenses.category")]: getCategoryLabel(e.category),
+      [t("expenses.amount")]: Number(e.amount),
+      [t("expenses.vendor")]: e.vendor || "",
+      [t("expenses.paymentMethod")]: e.payment_method || "",
+      [t("expenses.notes")]: e.notes || "",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t("nav.expenses"));
+    XLSX.writeFile(wb, `expenses-${new Date().toISOString().split("T")[0]}.xlsx`);
+    toast.success(t("expenses.exportSuccess"));
+  };
+
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
   // Filter expenses - must be before any conditional returns
@@ -257,13 +276,18 @@ const Expenses = () => {
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">{t("expenses.title")}</h1>
             <p className="text-sm sm:text-base text-muted-foreground">{t("expenses.subtitle")}</p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 w-full sm:w-auto">
-                <Plus className="h-4 w-4" />
-                {t("expenses.new")}
-              </Button>
-            </DialogTrigger>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={exportToExcel} variant="outline" className="gap-2 w-full sm:w-auto">
+              <FileDown className="h-4 w-4" />
+              <span className="sm:inline">{t("expenses.exportExcel")}</span>
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 w-full sm:w-auto">
+                  <Plus className="h-4 w-4" />
+                  {t("expenses.new")}
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t("expenses.newTitle")}</DialogTitle>
@@ -367,7 +391,8 @@ const Expenses = () => {
                 </Button>
               </form>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <Card className="bg-destructive-light border-destructive/20 shadow-md">
@@ -428,15 +453,13 @@ const Expenses = () => {
                         {formatCurrency(Number(expense.amount))}
                       </p>
                       <div className="flex items-center gap-2">
-                      <Button
-                        variant="edit"
-                        size="xs"
-                        className="gap-1"
-                        onClick={() => handleEdit(expense)}
-                      >
-                        <Pencil className="h-3 w-3" />
-                        {t("common.edit")}
-                      </Button>
+                        <Button
+                          variant="edit"
+                          size="icon"
+                          onClick={() => handleEdit(expense)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="icon"
