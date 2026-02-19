@@ -439,12 +439,12 @@ const Donations = () => {
           </div>
         </div>
 
-        <Card className="bg-success-light border-success/20 shadow-md">
+        <Card className="bg-income-light border-income/20 shadow-md">
           <CardHeader>
-            <CardTitle className="text-success">{t("donations.total")}</CardTitle>
+            <CardTitle className="text-income">{t("donations.total")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-success">{formatCurrency(totalDonations)}</p>
+            <p className="text-4xl font-bold text-income">{formatCurrency(totalDonations)}</p>
           </CardContent>
         </Card>
 
@@ -492,7 +492,7 @@ const Donations = () => {
                       )}
                     </div>
                     <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
-                      <p className="text-lg sm:text-xl font-bold text-success whitespace-nowrap">
+                      <p className="text-lg sm:text-xl font-bold text-income whitespace-nowrap">
                         {formatCurrency(Number(donation.amount))}
                       </p>
                       <div className="flex items-center gap-2">
@@ -507,7 +507,7 @@ const Donations = () => {
                           variant="outline"
                           size="icon"
                           onClick={() => handleDeleteClick(donation.id)}
-                          className="bg-[#6e6e6e] hover:bg-[#a1a1a1] text-white border-[#6e6e6e] hover:border-[#a1a1a1] flex-shrink-0"
+                          className="bg-button-secondary hover:bg-button-secondary-hover text-button-secondary-foreground border-button-secondary flex-shrink-0"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -532,12 +532,12 @@ const Donations = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-2 sm:gap-0">
-              <AlertDialogCancel className="bg-[#6e6e6e] hover:bg-[#a1a1a1] text-white hover:text-white border-0">
+              <AlertDialogCancel className="bg-button-secondary hover:bg-button-secondary-hover text-button-secondary-foreground hover:text-button-secondary-foreground border-0">
                 {t("common.no")}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleConfirmDelete}
-                className="bg-destructive hover:bg-destructive/90 text-white border-0"
+                className="bg-expense hover:bg-expense/90 text-expense-foreground border-0"
               >
                 {t("common.yes")}
               </AlertDialogAction>

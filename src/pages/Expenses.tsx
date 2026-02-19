@@ -395,12 +395,12 @@ const Expenses = () => {
           </div>
         </div>
 
-        <Card className="bg-destructive-light border-destructive/20 shadow-md">
+        <Card className="bg-expense-light border-expense/20 shadow-md">
           <CardHeader>
-            <CardTitle className="text-destructive">{t("expenses.total")}</CardTitle>
+            <CardTitle className="text-expense">{t("expenses.total")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-destructive">{formatCurrency(totalExpenses)}</p>
+            <p className="text-4xl font-bold text-expense">{formatCurrency(totalExpenses)}</p>
           </CardContent>
         </Card>
 
@@ -449,7 +449,7 @@ const Expenses = () => {
                       )}
                     </div>
                     <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
-                      <p className="text-lg sm:text-xl font-bold text-destructive whitespace-nowrap">
+                      <p className="text-lg sm:text-xl font-bold text-expense whitespace-nowrap">
                         {formatCurrency(Number(expense.amount))}
                       </p>
                       <div className="flex items-center gap-2">
@@ -464,7 +464,7 @@ const Expenses = () => {
                           variant="outline"
                           size="icon"
                           onClick={() => handleDeleteClick(expense.id)}
-                          className="bg-[#6e6e6e] hover:bg-[#a1a1a1] text-white border-[#6e6e6e] hover:border-[#a1a1a1] flex-shrink-0"
+                          className="bg-button-secondary hover:bg-button-secondary-hover text-button-secondary-foreground border-button-secondary flex-shrink-0"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -489,12 +489,12 @@ const Expenses = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-2 sm:gap-0">
-              <AlertDialogCancel className="bg-[#6e6e6e] hover:bg-[#a1a1a1] text-white hover:text-white border-0">
+              <AlertDialogCancel className="bg-button-secondary hover:bg-button-secondary-hover text-button-secondary-foreground hover:text-button-secondary-foreground border-0">
                 {t("common.no")}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleConfirmDelete}
-                className="bg-destructive hover:bg-destructive/90 text-white border-0"
+                className="bg-expense hover:bg-expense/90 text-expense-foreground border-0"
               >
                 {t("common.yes")}
               </AlertDialogAction>
