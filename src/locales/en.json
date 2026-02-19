@@ -304,6 +304,9 @@
     "fullNamePlaceholder": "Enter your full name",
     "churchName": "Church Name",
     "churchNamePlaceholder": "Enter your church name",
+    "appName": "System Name",
+    "appNamePlaceholder": "Ex: ChurchLedger, MyChurch...",
+    "appNameDesc": "This name appears on the login screen and navbar.",
     "updateSuccess": "Profile updated successfully!",
     "updateError": "Error updating profile"
   }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
-import { DollarSign } from "lucide-react";
+import appLogo from "@/assets/app-logo.png";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [appName, setAppName] = useState("ChurchLedger");
   const { signIn, signUp, user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedName = localStorage.getItem("churchledger-appname");
+    if (savedName) setAppName(savedName);
+  }, []);
 
   // Redirect if already logged in
   if (user) {
@@ -82,11 +88,11 @@ const Auth = () => {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-primary/5 p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-primary">
-            <DollarSign className="h-10 w-10 text-primary-foreground" />
+          <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-2xl overflow-hidden bg-transparent">
+            <img src={appLogo} alt="Logo" className="h-full w-full object-contain" />
           </div>
           <div className="space-y-2">
-            <CardTitle className="text-3xl font-bold">ChurchLedger</CardTitle>
+            <CardTitle className="text-3xl font-bold">{appName}</CardTitle>
             <CardDescription className="text-base">
               Gerencie as doações, despesas e finanças da sua igreja de forma simples e organizada.
             </CardDescription>

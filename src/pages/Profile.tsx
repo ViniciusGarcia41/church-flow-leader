@@ -20,6 +20,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [churchName, setChurchName] = useState("");
+  const [appName, setAppName] = useState("ChurchLedger");
   const [churchLogo, setChurchLogo] = useState(defaultChurchLogo);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -35,9 +36,9 @@ const Profile = () => {
     if (user) {
       loadProfile();
       const savedLogo = localStorage.getItem("churchledger-logo");
-      if (savedLogo) {
-        setChurchLogo(savedLogo);
-      }
+      if (savedLogo) setChurchLogo(savedLogo);
+      const savedAppName = localStorage.getItem("churchledger-appname");
+      if (savedAppName) setAppName(savedAppName);
     }
   }, [user]);
 
@@ -73,6 +74,12 @@ const Profile = () => {
         .eq("id", user?.id);
 
       if (error) throw error;
+
+      // Save app name to localStorage and dispatch event so Navbar/Auth update
+      const nameToSave = appName.trim() || "ChurchLedger";
+      localStorage.setItem("churchledger-appname", nameToSave);
+      window.dispatchEvent(new Event("storage"));
+
       toast.success(t("profile.updateSuccess"));
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -248,6 +255,17 @@ const Profile = () => {
                   onChange={(e) => setChurchName(e.target.value)}
                   placeholder={t("profile.churchNamePlaceholder")}
                 />
+              </div>
+              <div>
+                <Label htmlFor="appName">{t("profile.appName")}</Label>
+                <Input
+                  id="appName"
+                  type="text"
+                  value={appName}
+                  onChange={(e) => setAppName(e.target.value)}
+                  placeholder={t("profile.appNamePlaceholder")}
+                />
+                <p className="text-xs text-muted-foreground mt-1">{t("profile.appNameDesc")}</p>
               </div>
               <Button onClick={updateProfile} disabled={loading}>
                 <Save className="h-4 w-4 mr-2" />
