@@ -304,6 +304,9 @@
     "fullNamePlaceholder": "Digite seu nome completo",
     "churchName": "Nome da Igreja",
     "churchNamePlaceholder": "Digite o nome da sua igreja",
+    "appName": "Nome do Sistema",
+    "appNamePlaceholder": "Ex: ChurchLedger, GestãoIgreja...",
+    "appNameDesc": "Este nome aparece na tela de login e na navbar.",
     "updateSuccess": "Perfil atualizado com sucesso!",
     "updateError": "Erro ao atualizar perfil"
   }

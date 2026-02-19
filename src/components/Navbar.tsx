@@ -14,18 +14,19 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [churchLogo, setChurchLogo] = useState(defaultChurchLogo);
+  const [appName, setAppName] = useState("ChurchLedger");
 
   useEffect(() => {
     const savedLogo = localStorage.getItem("churchledger-logo");
-    if (savedLogo) {
-      setChurchLogo(savedLogo);
-    }
+    if (savedLogo) setChurchLogo(savedLogo);
+    const savedAppName = localStorage.getItem("churchledger-appname");
+    if (savedAppName) setAppName(savedAppName);
 
     const handleStorageChange = () => {
       const updatedLogo = localStorage.getItem("churchledger-logo");
-      if (updatedLogo) {
-        setChurchLogo(updatedLogo);
-      }
+      if (updatedLogo) setChurchLogo(updatedLogo);
+      const updatedAppName = localStorage.getItem("churchledger-appname");
+      if (updatedAppName) setAppName(updatedAppName);
     };
 
     window.addEventListener("storage", handleStorageChange);
@@ -100,7 +101,7 @@ const Navbar = () => {
             alt="Church Logo"
             className="h-12 w-12 min-w-[40px] min-h-[40px] rounded-lg object-contain"
           />
-          <span className="text-xl font-bold hidden md:inline truncate">ChurchLedger</span>
+          <span className="text-xl font-bold hidden md:inline truncate">{appName}</span>
         </Link>
 
         {/* Desktop Navigation */}
