@@ -26,9 +26,9 @@ export const ThemeToggle = () => {
       aria-label="Toggle theme"
     >
       {theme === "dark" ? (
-        <Sun className="h-4 w-4" style={{ color: '#e4e1d2' }} />
+        <Sun className="h-4 w-4 text-foreground" />
       ) : (
-        <Moon className="h-4 w-4" style={{ color: '#2b3648' }} />
+        <Moon className="h-4 w-4 text-foreground" />
       )}
     </Button>
   );

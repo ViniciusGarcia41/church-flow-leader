@@ -395,7 +395,7 @@ const Donors = () => {
                         variant="outline"
                         size="icon"
                         onClick={() => handleDeleteClick(donor.id)}
-                        className="bg-[#6e6e6e] text-white border-[#6e6e6e] hover:bg-[#a1a1a1] hover:border-[#a1a1a1]"
+                        className="bg-button-secondary hover:bg-button-secondary-hover text-button-secondary-foreground border-button-secondary"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -417,12 +417,12 @@ const Donors = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="bg-[#6e6e6e] text-white border-[#6e6e6e] hover:bg-[#a1a1a1] hover:text-white hover:border-[#a1a1a1]">
+              <AlertDialogCancel className="bg-button-secondary hover:bg-button-secondary-hover text-button-secondary-foreground hover:text-button-secondary-foreground border-0">
                 {t("common.no")}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleConfirmDelete}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-expense hover:bg-expense/90 text-expense-foreground"
               >
                 {t("common.yes")}
               </AlertDialogAction>

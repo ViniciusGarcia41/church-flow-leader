@@ -119,26 +119,26 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-success-light border-success/20 shadow-md">
+          <Card className="bg-income-light border-income/20 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">{t("dashboard.donationsTotal")}</CardTitle>
-              <TrendingUp className="h-4 w-4 text-success flex-shrink-0" />
+              <TrendingUp className="h-4 w-4 text-income flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-success">{formatCurrency(summary.totalDonations)}</div>
+              <div className="text-xl sm:text-2xl font-bold text-income">{formatCurrency(summary.totalDonations)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {t("dashboard.accumulatedTotal")}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-destructive-light border-destructive/20 shadow-md">
+          <Card className="bg-expense-light border-expense/20 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">{t("dashboard.expensesTotal")}</CardTitle>
-              <TrendingDown className="h-4 w-4 text-destructive flex-shrink-0" />
+              <TrendingDown className="h-4 w-4 text-expense flex-shrink-0" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold text-destructive">{formatCurrency(summary.totalExpenses)}</div>
+              <div className="text-xl sm:text-2xl font-bold text-expense">{formatCurrency(summary.totalExpenses)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {t("dashboard.accumulatedTotal")}
               </p>
@@ -167,21 +167,21 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-success-light">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-income-light border border-income/20">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">{t("dashboard.donationsThisMonth")}</p>
                   <p className="text-xs text-muted-foreground">{t("dashboard.monthRevenue")}</p>
                 </div>
-                <p className="text-xl font-bold text-success">
+                <p className="text-xl font-bold text-income">
                   {formatCurrency(summary.donationsThisMonth)}
                 </p>
               </div>
-              <div className="flex items-center justify-between p-4 rounded-lg bg-destructive-light">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-expense-light border border-expense/20">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">{t("dashboard.expensesThisMonth")}</p>
                   <p className="text-xs text-muted-foreground">{t("dashboard.monthExpenses")}</p>
                 </div>
-                <p className="text-xl font-bold text-destructive">
+                <p className="text-xl font-bold text-expense">
                   {formatCurrency(summary.expensesThisMonth)}
                 </p>
               </div>
