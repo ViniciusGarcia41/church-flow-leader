@@ -58,6 +58,8 @@
     "editTitle": "Editar Doação",
     "updateSuccess": "Doação atualizada com sucesso!",
     "updateError": "Erro ao atualizar doação",
+    "receiptSuccess": "Recibo gerado com sucesso!",
+    "receiptError": "Erro ao gerar recibo",
     "types": {
       "tithe": "Dízimo",
       "offering": "Oferta",
@@ -104,6 +106,8 @@
     "editTitle": "Editar Despesa",
     "updateSuccess": "Despesa atualizada com sucesso!",
     "updateError": "Erro ao atualizar despesa",
+    "receiptSuccess": "Recibo gerado com sucesso!",
+    "receiptError": "Erro ao gerar recibo",
     "categories": {
       "salaries": "Salários",
       "utilities": "Utilidades",
@@ -131,6 +135,8 @@
     "list": "Lista de Doadores",
     "none": "Nenhum doador cadastrado ainda",
     "name": "Nome Completo",
+    "cpfCnpj": "CPF / CNPJ",
+    "cpfCnpjPlaceholder": "000.000.000-00 ou 00.000.000/0001-00",
     "email": "E-mail",
     "emailPlaceholder": "email@exemplo.com",
     "phone": "Telefone",
@@ -278,6 +284,7 @@
     "success": "Sucesso",
     "edit": "Editar",
     "delete": "Excluir",
+    "confirmDelete": "Confirmar Exclusão",
     "confirmDeleteTitle": "Confirmar Exclusão",
     "confirmDeleteDescription": "Esta ação não pode ser desfeita. Deseja continuar?",
     "yes": "Sim, excluir",
@@ -304,10 +311,21 @@
     "fullNamePlaceholder": "Digite seu nome completo",
     "churchName": "Nome da Igreja",
     "churchNamePlaceholder": "Digite o nome da sua igreja",
+    "churchCnpj": "CNPJ da Igreja",
+    "churchCnpjPlaceholder": "00.000.000/0001-00",
+    "churchCnpjDesc": "O CNPJ aparecerá nos recibos gerados pelo sistema.",
     "appName": "Nome do Sistema",
     "appNamePlaceholder": "Ex: ChurchLedger, GestãoIgreja...",
     "appNameDesc": "Este nome aparece na tela de login e na navbar.",
     "updateSuccess": "Perfil atualizado com sucesso!",
     "updateError": "Erro ao atualizar perfil"
+  },
+  "attachments": {
+    "label": "Anexo (opcional)",
+    "hint": "JPG, PNG ou PDF (máx. 10MB)",
+    "invalidType": "Formato inválido. Use JPG, PNG ou PDF.",
+    "tooLarge": "Arquivo muito grande. Máximo 10MB.",
+    "view": "Visualizar Anexo",
+    "existing": "Anexo existente (envie novo para substituir)"
   }
 }

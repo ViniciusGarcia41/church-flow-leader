@@ -20,11 +20,11 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [churchName, setChurchName] = useState("");
+  const [churchCnpj, setChurchCnpj] = useState("");
   const [appName, setAppName] = useState("ChurchLedger");
   const [churchLogo, setChurchLogo] = useState(defaultChurchLogo);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Crop states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
@@ -46,7 +46,7 @@ const Profile = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, church_name")
+        .select("full_name, church_name, church_cnpj")
         .eq("id", user?.id)
         .single();
 
@@ -55,6 +55,7 @@ const Profile = () => {
       if (data) {
         setFullName(data.full_name || "");
         setChurchName(data.church_name || "");
+        setChurchCnpj((data as any).church_cnpj || "");
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -69,13 +70,13 @@ const Profile = () => {
         .update({
           full_name: fullName,
           church_name: churchName,
+          church_cnpj: churchCnpj,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq("id", user?.id);
 
       if (error) throw error;
 
-      // Save app name to localStorage and dispatch event so Navbar/Auth update
       const nameToSave = appName.trim() || "ChurchLedger";
       localStorage.setItem("churchledger-appname", nameToSave);
       window.dispatchEvent(new Event("storage"));
@@ -133,26 +134,10 @@ const Profile = () => {
     const image = await createImage(imageSrc);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-
-    if (!ctx) {
-      throw new Error("No 2d context");
-    }
-
+    if (!ctx) throw new Error("No 2d context");
     canvas.width = pixelCrop.width;
     canvas.height = pixelCrop.height;
-
-    ctx.drawImage(
-      image,
-      pixelCrop.x,
-      pixelCrop.y,
-      pixelCrop.width,
-      pixelCrop.height,
-      0,
-      0,
-      pixelCrop.width,
-      pixelCrop.height
-    );
-
+    ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
     return canvas.toDataURL("image/png");
   };
 
@@ -184,9 +169,7 @@ const Profile = () => {
     setPreviewLogo(null);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -202,28 +185,16 @@ const Profile = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-6">
-                <img
-                  src={churchLogo}
-                  alt="Church Logo"
-                  className="h-32 w-32 rounded-lg object-contain border-2 border-border"
-                />
+                <img src={churchLogo} alt="Church Logo" className="h-32 w-32 rounded-lg object-contain border-2 border-border" />
                 <div>
                   <Button onClick={() => fileInputRef.current?.click()}>
                     <Upload className="h-4 w-4 mr-2" />
                     {t("profile.uploadLogo")}
                   </Button>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    PNG, JPG, SVG ou WEBP (máx. 5MB)
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">PNG, JPG, SVG ou WEBP (máx. 5MB)</p>
                 </div>
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+              <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" className="hidden" onChange={handleFileChange} />
             </CardContent>
           </Card>
 
@@ -238,33 +209,20 @@ const Profile = () => {
               </div>
               <div>
                 <Label htmlFor="fullName">{t("profile.fullName")}</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder={t("profile.fullNamePlaceholder")}
-                />
+                <Input id="fullName" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("profile.fullNamePlaceholder")} />
               </div>
               <div>
                 <Label htmlFor="churchName">{t("profile.churchName")}</Label>
-                <Input
-                  id="churchName"
-                  type="text"
-                  value={churchName}
-                  onChange={(e) => setChurchName(e.target.value)}
-                  placeholder={t("profile.churchNamePlaceholder")}
-                />
+                <Input id="churchName" type="text" value={churchName} onChange={(e) => setChurchName(e.target.value)} placeholder={t("profile.churchNamePlaceholder")} />
+              </div>
+              <div>
+                <Label htmlFor="churchCnpj">{t("profile.churchCnpj")}</Label>
+                <Input id="churchCnpj" type="text" value={churchCnpj} onChange={(e) => setChurchCnpj(e.target.value)} placeholder={t("profile.churchCnpjPlaceholder")} />
+                <p className="text-xs text-muted-foreground mt-1">{t("profile.churchCnpjDesc")}</p>
               </div>
               <div>
                 <Label htmlFor="appName">{t("profile.appName")}</Label>
-                <Input
-                  id="appName"
-                  type="text"
-                  value={appName}
-                  onChange={(e) => setAppName(e.target.value)}
-                  placeholder={t("profile.appNamePlaceholder")}
-                />
+                <Input id="appName" type="text" value={appName} onChange={(e) => setAppName(e.target.value)} placeholder={t("profile.appNamePlaceholder")} />
                 <p className="text-xs text-muted-foreground mt-1">{t("profile.appNameDesc")}</p>
               </div>
               <Button onClick={updateProfile} disabled={loading}>
@@ -278,38 +236,16 @@ const Profile = () => {
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Ajustar e Cortar Logo</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Ajustar e Cortar Logo</DialogTitle></DialogHeader>
           <div className="relative w-full h-[400px] bg-muted/20 rounded-lg overflow-hidden">
-            {previewLogo && (
-              <Cropper
-                image={previewLogo}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                onCropChange={setCrop}
-                onCropComplete={onCropComplete}
-                onZoomChange={setZoom}
-              />
-            )}
+            {previewLogo && <Cropper image={previewLogo} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onCropComplete={onCropComplete} onZoomChange={setZoom} />}
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Zoom</label>
-            <input
-              type="range"
-              min={1}
-              max={3}
-              step={0.1}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
-            />
+            <input type="range" min={1} max={3} step={0.1} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer" />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={handleCancelUpload} disabled={isCropping}>
-              Cancelar
-            </Button>
+            <Button variant="outline" onClick={handleCancelUpload} disabled={isCropping}>Cancelar</Button>
             <Button onClick={handleSaveLogo} disabled={isCropping}>
               <Crop className="h-4 w-4 mr-2" />
               {isCropping ? "Processando..." : "Salvar Logo"}
