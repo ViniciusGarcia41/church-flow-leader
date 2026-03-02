@@ -10,12 +10,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
 import FilterBar from "@/components/FilterBar";
-import { Plus, Trash2, FileDown, Pencil } from "lucide-react";
+import { Plus, Trash2, FileDown, Pencil, Paperclip, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Donation {
   id: string;
@@ -26,12 +28,14 @@ interface Donation {
   notes: string | null;
   donation_date: string;
   donor_id: string | null;
-  donors?: { name: string } | null;
+  attachment_url: string | null;
+  donors?: { name: string; cpf_cnpj?: string | null } | null;
 }
 
 interface Donor {
   id: string;
   name: string;
+  cpf_cnpj?: string | null;
 }
 
 const Donations = () => {
@@ -50,6 +54,9 @@ const Donations = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [donationToDelete, setDonationToDelete] = useState<string | null>(null);
   const [editPaymentMethod, setEditPaymentMethod] = useState<string>("");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [viewAttachmentUrl, setViewAttachmentUrl] = useState<string | null>(null);
+  const [isViewAttachmentOpen, setIsViewAttachmentOpen] = useState(false);
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,7 +75,7 @@ const Donations = () => {
     try {
       const { data, error } = await supabase
         .from("donors")
-        .select("id, name")
+        .select("id, name, cpf_cnpj")
         .eq("user_id", user?.id)
         .order("name", { ascending: true });
 
@@ -85,7 +92,7 @@ const Donations = () => {
         .from("donations")
         .select(`
           *,
-          donors (name)
+          donors (name, cpf_cnpj)
         `)
         .eq("user_id", user?.id)
         .order("donation_date", { ascending: false });
@@ -101,12 +108,43 @@ const Donations = () => {
     }
   };
 
+  const uploadAttachment = async (file: File, transactionId: string): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${user?.id}/${transactionId}.${fileExt}`;
+    
+    const { error } = await supabase.storage
+      .from("transaction-attachments")
+      .upload(filePath, file, { upsert: true });
+    
+    if (error) throw error;
+    
+    const { data } = supabase.storage
+      .from("transaction-attachments")
+      .getPublicUrl(filePath);
+    
+    return data.publicUrl;
+  };
+
+  const deleteAttachment = async (attachmentUrl: string) => {
+    try {
+      const url = new URL(attachmentUrl);
+      const pathParts = url.pathname.split('/transaction-attachments/');
+      if (pathParts.length > 1) {
+        await supabase.storage
+          .from("transaction-attachments")
+          .remove([pathParts[1]]);
+      }
+    } catch (e) {
+      console.error("Error deleting attachment:", e);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
-    const donationData = {
+    const donationData: any = {
       user_id: user?.id,
       donor_id: selectedDonor === "anonymous" || !selectedDonor ? null : selectedDonor,
       amount: parseFloat(formData.get("amount") as string),
@@ -118,14 +156,19 @@ const Donations = () => {
     };
 
     try {
-      const { error } = await supabase.from("donations").insert([donationData]);
-
+      const { data, error } = await supabase.from("donations").insert([donationData]).select().single();
       if (error) throw error;
+
+      if (attachmentFile && data) {
+        const url = await uploadAttachment(attachmentFile, data.id);
+        await supabase.from("donations").update({ attachment_url: url }).eq("id", data.id);
+      }
 
       toast.success(t("donations.success"));
       setIsDialogOpen(false);
       setSelectedDonor("");
       setIsRecurring(false);
+      setAttachmentFile(null);
       fetchDonations();
       e.currentTarget.reset();
     } catch (error: any) {
@@ -146,8 +189,12 @@ const Donations = () => {
     if (!donationToDelete) return;
 
     try {
-      const { error } = await supabase.from("donations").delete().eq("id", donationToDelete);
+      const donation = donations.find(d => d.id === donationToDelete);
+      if (donation?.attachment_url) {
+        await deleteAttachment(donation.attachment_url);
+      }
 
+      const { error } = await supabase.from("donations").delete().eq("id", donationToDelete);
       if (error) throw error;
 
       toast.success(t("donations.deleteSuccess"));
@@ -193,7 +240,7 @@ const Donations = () => {
     setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
-    const donationData = {
+    const donationData: any = {
       donor_id: selectedDonor === "anonymous" || !selectedDonor ? null : selectedDonor,
       amount: parseFloat(formData.get("amount") as string),
       donation_type: formData.get("donation_type") as "tithe" | "offering" | "special_project" | "campaign",
@@ -204,6 +251,14 @@ const Donations = () => {
     };
 
     try {
+      if (attachmentFile) {
+        if (editingDonation.attachment_url) {
+          await deleteAttachment(editingDonation.attachment_url);
+        }
+        const url = await uploadAttachment(attachmentFile, editingDonation.id);
+        donationData.attachment_url = url;
+      }
+
       const { error } = await supabase
         .from("donations")
         .update(donationData)
@@ -216,6 +271,7 @@ const Donations = () => {
       setEditingDonation(null);
       setSelectedDonor("");
       setEditPaymentMethod("");
+      setAttachmentFile(null);
       fetchDonations();
     } catch (error: any) {
       toast.error(t("donations.updateError"), {
@@ -226,6 +282,167 @@ const Donations = () => {
     }
   };
 
+  const generateReceipt = async (donation: Donation) => {
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("church_name, church_cnpj")
+        .eq("id", user?.id)
+        .single();
+
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const churchName = profile?.church_name || localStorage.getItem("churchledger-appname") || "ChurchLedger";
+      const churchCnpj = (profile as any)?.church_cnpj || "";
+      const receiptNumber = `REC-${donation.id.substring(0, 8).toUpperCase()}`;
+
+      // Try to add logo
+      const savedLogo = localStorage.getItem("churchledger-logo");
+      let yPos = 15;
+      if (savedLogo) {
+        try {
+          doc.addImage(savedLogo, "PNG", 14, yPos, 25, 25);
+          doc.setFontSize(18);
+          doc.setFont("helvetica", "bold");
+          doc.text(churchName, 44, yPos + 10);
+          if (churchCnpj) {
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`CNPJ: ${churchCnpj}`, 44, yPos + 17);
+          }
+          yPos += 32;
+        } catch {
+          doc.setFontSize(18);
+          doc.setFont("helvetica", "bold");
+          doc.text(churchName, pageWidth / 2, yPos + 5, { align: "center" });
+          if (churchCnpj) {
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`CNPJ: ${churchCnpj}`, pageWidth / 2, yPos + 12, { align: "center" });
+          }
+          yPos += 20;
+        }
+      } else {
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.text(churchName, pageWidth / 2, yPos + 5, { align: "center" });
+        if (churchCnpj) {
+          doc.setFontSize(10);
+          doc.setFont("helvetica", "normal");
+          doc.text(`CNPJ: ${churchCnpj}`, pageWidth / 2, yPos + 12, { align: "center" });
+        }
+        yPos += 20;
+      }
+
+      // Line separator
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, yPos, pageWidth - 14, yPos);
+      yPos += 8;
+
+      // Receipt title and number
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text(language === "pt" ? "RECIBO DE DOAÇÃO" : "DONATION RECEIPT", pageWidth / 2, yPos, { align: "center" });
+      yPos += 7;
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Nº ${receiptNumber}`, pageWidth / 2, yPos, { align: "center" });
+      yPos += 12;
+
+      // Donor info
+      const donorName = donation.donors?.name || (language === "pt" ? "Anônimo" : "Anonymous");
+      const donorCpfCnpj = donation.donors?.cpf_cnpj || "";
+
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(language === "pt" ? "Doador:" : "Donor:", 14, yPos);
+      doc.setFont("helvetica", "normal");
+      doc.text(donorName, 50, yPos);
+      yPos += 7;
+
+      if (donorCpfCnpj) {
+        doc.setFont("helvetica", "bold");
+        doc.text("CPF/CNPJ:", 14, yPos);
+        doc.setFont("helvetica", "normal");
+        doc.text(donorCpfCnpj, 50, yPos);
+        yPos += 7;
+      }
+
+      // Transaction details
+      doc.setFont("helvetica", "bold");
+      doc.text(language === "pt" ? "Data:" : "Date:", 14, yPos);
+      doc.setFont("helvetica", "normal");
+      doc.text(new Date(donation.donation_date + "T00:00:00").toLocaleDateString(language === "pt" ? "pt-BR" : "en-US"), 50, yPos);
+      yPos += 7;
+
+      doc.setFont("helvetica", "bold");
+      doc.text(language === "pt" ? "Tipo:" : "Type:", 14, yPos);
+      doc.setFont("helvetica", "normal");
+      const typeKey = `donations.types.${donation.donation_type}` as const;
+      doc.text(t(typeKey), 50, yPos);
+      yPos += 7;
+
+      if (donation.category) {
+        doc.setFont("helvetica", "bold");
+        doc.text(language === "pt" ? "Categoria:" : "Category:", 14, yPos);
+        doc.setFont("helvetica", "normal");
+        doc.text(donation.category, 50, yPos);
+        yPos += 7;
+      }
+
+      if (donation.payment_method) {
+        doc.setFont("helvetica", "bold");
+        doc.text(language === "pt" ? "Pagamento:" : "Payment:", 14, yPos);
+        doc.setFont("helvetica", "normal");
+        doc.text(donation.payment_method, 50, yPos);
+        yPos += 7;
+      }
+
+      yPos += 3;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, yPos, pageWidth - 14, yPos);
+      yPos += 10;
+
+      // Amount
+      doc.setFontSize(14);
+      doc.setFont("helvetica", "bold");
+      doc.text(language === "pt" ? "Valor:" : "Amount:", 14, yPos);
+      doc.text(formatCurrency(Number(donation.amount)), pageWidth - 14, yPos, { align: "right" });
+      yPos += 10;
+
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, yPos, pageWidth - 14, yPos);
+      yPos += 8;
+
+      // Notes
+      if (donation.notes) {
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text(language === "pt" ? "Observações:" : "Notes:", 14, yPos);
+        yPos += 6;
+        doc.setFont("helvetica", "normal");
+        const splitNotes = doc.splitTextToSize(donation.notes, pageWidth - 28);
+        doc.text(splitNotes, 14, yPos);
+        yPos += splitNotes.length * 5 + 5;
+      }
+
+      // Footer
+      const footerY = doc.internal.pageSize.height - 20;
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(150);
+      const emissionDate = new Date().toLocaleDateString(language === "pt" ? "pt-BR" : "en-US");
+      doc.text(
+        `${language === "pt" ? "Emitido em" : "Issued on"}: ${emissionDate}`,
+        pageWidth / 2, footerY, { align: "center" }
+      );
+
+      doc.save(`recibo-doacao-${receiptNumber}.pdf`);
+      toast.success(t("donations.receiptSuccess"));
+    } catch (error: any) {
+      toast.error(t("donations.receiptError"), { description: error.message });
+    }
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString + "T00:00:00").toLocaleDateString(language === "pt" ? "pt-BR" : "en-US");
@@ -256,7 +473,6 @@ const Donations = () => {
 
   const totalDonations = donations.reduce((sum, d) => sum + Number(d.amount), 0);
 
-  // Filter donations - must be before any conditional returns
   const filteredDonations = useMemo(() => {
     return donations.filter((donation) => {
       const searchLower = searchTerm.toLowerCase();
@@ -286,6 +502,43 @@ const Donations = () => {
     { value: "campaign", label: t("donations.types.campaign") },
   ];
 
+  const handleAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!validTypes.includes(file.type)) {
+      toast.error(t("common.error"), { description: t("attachments.invalidType") });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(t("common.error"), { description: t("attachments.tooLarge") });
+      return;
+    }
+    setAttachmentFile(file);
+  };
+
+  const viewAttachment = (url: string) => {
+    setViewAttachmentUrl(url);
+    setIsViewAttachmentOpen(true);
+  };
+
+  const AttachmentField = () => (
+    <div className="space-y-2">
+      <Label>{t("attachments.label")}</Label>
+      <Input
+        type="file"
+        accept=".jpg,.jpeg,.png,.pdf"
+        onChange={handleAttachmentChange}
+        disabled={isSubmitting}
+        className="text-base"
+      />
+      {attachmentFile && (
+        <p className="text-xs text-muted-foreground">{attachmentFile.name}</p>
+      )}
+      <p className="text-xs text-muted-foreground">{t("attachments.hint")}</p>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -311,7 +564,7 @@ const Donations = () => {
               <FileDown className="h-4 w-4" />
               <span className="sm:inline">{t("donations.exportExcel")}</span>
             </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setAttachmentFile(null); }}>
               <DialogTrigger asChild>
                 <Button className="gap-2 w-full sm:w-auto">
                   <Plus className="h-4 w-4" />
@@ -343,29 +596,11 @@ const Donations = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="amount">{t("donations.amount")} {t("common.required")}</Label>
-                    <Input
-                      id="amount"
-                      name="amount"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      placeholder="0.00"
-                      required
-                      disabled={isSubmitting}
-                      className="text-base"
-                    />
+                    <Input id="amount" name="amount" type="number" step="0.01" min="0.01" placeholder="0.00" required disabled={isSubmitting} className="text-base" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="donation_date">{t("donations.date")} {t("common.required")}</Label>
-                    <Input
-                      id="donation_date"
-                      name="donation_date"
-                      type="date"
-                      defaultValue={new Date().toISOString().split("T")[0]}
-                      required
-                      disabled={isSubmitting}
-                      className="text-base"
-                    />
+                    <Input id="donation_date" name="donation_date" type="date" defaultValue={new Date().toISOString().split("T")[0]} required disabled={isSubmitting} className="text-base" />
                   </div>
                 </div>
 
@@ -373,9 +608,7 @@ const Donations = () => {
                   <div className="space-y-2">
                     <Label htmlFor="donation_type">{t("donations.type")} {t("common.required")}</Label>
                     <Select name="donation_type" defaultValue="offering" required disabled={isSubmitting}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="tithe">{t("donations.types.tithe")}</SelectItem>
                         <SelectItem value="offering">{t("donations.types.offering")}</SelectItem>
@@ -386,48 +619,25 @@ const Donations = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="payment_method">{t("donations.paymentMethod")}</Label>
-                    <Input
-                      id="payment_method"
-                      name="payment_method"
-                      type="text"
-                      placeholder={t("common.paymentMethodPlaceholder")}
-                      disabled={isSubmitting}
-                    />
+                    <Input id="payment_method" name="payment_method" type="text" placeholder={t("common.paymentMethodPlaceholder")} disabled={isSubmitting} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="category">{t("donations.category")}</Label>
-                  <Input
-                    id="category"
-                    name="category"
-                    type="text"
-                    placeholder={t("donations.categoryPlaceholder")}
-                    disabled={isSubmitting}
-                  />
+                  <Input id="category" name="category" type="text" placeholder={t("donations.categoryPlaceholder")} disabled={isSubmitting} />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="notes">{t("donations.notes")}</Label>
-                  <Input
-                    id="notes"
-                    name="notes"
-                    type="text"
-                    placeholder={t("donations.notesPlaceholder")}
-                    disabled={isSubmitting}
-                  />
+                  <Input id="notes" name="notes" type="text" placeholder={t("donations.notesPlaceholder")} disabled={isSubmitting} />
                 </div>
 
+                <AttachmentField />
+
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="recurring"
-                    checked={isRecurring}
-                    onCheckedChange={(checked) => setIsRecurring(checked as boolean)}
-                    disabled={isSubmitting}
-                  />
-                  <Label htmlFor="recurring" className="text-sm font-normal cursor-pointer">
-                    {t("donations.recurring")}
-                  </Label>
+                  <Checkbox id="recurring" checked={isRecurring} onCheckedChange={(checked) => setIsRecurring(checked as boolean)} disabled={isSubmitting} />
+                  <Label htmlFor="recurring" className="text-sm font-normal cursor-pointer">{t("donations.recurring")}</Label>
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
@@ -448,7 +658,6 @@ const Donations = () => {
           </CardContent>
         </Card>
 
-        {/* Filter Bar */}
         <FilterBar
           searchPlaceholder={t("filters.searchPlaceholder")}
           onSearchChange={setSearchTerm}
@@ -481,7 +690,12 @@ const Donations = () => {
                     className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors gap-3 min-w-[280px]"
                   >
                     <div className="space-y-1 flex-1 min-w-0">
-                      <p className="font-medium text-sm sm:text-base">{getDonationTypeLabel(donation.donation_type)}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm sm:text-base">{getDonationTypeLabel(donation.donation_type)}</p>
+                        {donation.attachment_url && (
+                          <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                         <span>{formatDate(donation.donation_date)}</span>
                         {donation.category && <span>• {donation.category}</span>}
@@ -496,11 +710,15 @@ const Donations = () => {
                         {formatCurrency(Number(donation.amount))}
                       </p>
                       <div className="flex items-center gap-2">
-                        <Button
-                          variant="edit"
-                          size="icon"
-                          onClick={() => handleEdit(donation)}
-                        >
+                        {donation.attachment_url && (
+                          <Button variant="outline" size="icon" onClick={() => viewAttachment(donation.attachment_url!)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button variant="outline" size="icon" onClick={() => generateReceipt(donation)}>
+                          <FileDown className="h-4 w-4" />
+                        </Button>
+                        <Button variant="edit" size="icon" onClick={() => handleEdit(donation)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
@@ -524,29 +742,34 @@ const Donations = () => {
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent className="bg-background border-border">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-foreground text-lg font-semibold">
-                {t("common.confirmDeleteTitle")}
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-muted-foreground">
-                {t("donations.deleteConfirm")}
-              </AlertDialogDescription>
+              <AlertDialogTitle className="text-foreground text-lg font-semibold">{t("common.confirmDeleteTitle")}</AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">{t("donations.deleteConfirm")}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-2 sm:gap-0">
-              <AlertDialogCancel className="bg-button-secondary hover:bg-button-secondary-hover text-button-secondary-foreground hover:text-button-secondary-foreground border-0">
-                {t("common.no")}
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleConfirmDelete}
-                className="bg-expense hover:bg-expense/90 text-expense-foreground border-0"
-              >
-                {t("common.yes")}
-              </AlertDialogAction>
+              <AlertDialogCancel className="bg-button-secondary hover:bg-button-secondary-hover text-button-secondary-foreground hover:text-button-secondary-foreground border-0">{t("common.no")}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} className="bg-expense hover:bg-expense/90 text-expense-foreground border-0">{t("common.yes")}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* View Attachment Dialog */}
+        <Dialog open={isViewAttachmentOpen} onOpenChange={setIsViewAttachmentOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>{t("attachments.view")}</DialogTitle>
+            </DialogHeader>
+            {viewAttachmentUrl && (
+              viewAttachmentUrl.toLowerCase().endsWith('.pdf') ? (
+                <iframe src={viewAttachmentUrl} className="w-full h-[70vh] rounded-lg" />
+              ) : (
+                <img src={viewAttachmentUrl} alt="Attachment" className="w-full max-h-[70vh] object-contain rounded-lg" />
+              )
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Edit Donation Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) setAttachmentFile(null); }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{t("donations.editTitle")}</DialogTitle>
@@ -556,38 +779,23 @@ const Donations = () => {
                 <div className="space-y-2">
                   <Label htmlFor="edit-donor">{t("donations.donor")}</Label>
                   <Select value={selectedDonor} onValueChange={setSelectedDonor}>
-                    <SelectTrigger id="edit-donor">
-                      <SelectValue placeholder={t("donations.selectDonor")} />
-                    </SelectTrigger>
+                    <SelectTrigger id="edit-donor"><SelectValue placeholder={t("donations.selectDonor")} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="anonymous">{t("donations.anonymous")}</SelectItem>
                       {donors.map((donor) => (
-                        <SelectItem key={donor.id} value={donor.id}>
-                          {donor.name}
-                        </SelectItem>
+                        <SelectItem key={donor.id} value={donor.id}>{donor.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="edit-amount">{t("donations.amount")}</Label>
-                  <Input
-                    id="edit-amount"
-                    name="amount"
-                    type="number"
-                    step="0.01"
-                    defaultValue={editingDonation?.amount}
-                    required
-                  />
+                  <Input id="edit-amount" name="amount" type="number" step="0.01" defaultValue={editingDonation?.amount} required />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="edit-donation_type">{t("donations.type")}</Label>
                   <Select name="donation_type" defaultValue={editingDonation?.donation_type}>
-                    <SelectTrigger id="edit-donation_type">
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger id="edit-donation_type"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="tithe">{t("donations.types.tithe")}</SelectItem>
                       <SelectItem value="offering">{t("donations.types.offering")}</SelectItem>
@@ -596,22 +804,14 @@ const Donations = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="edit-category">{t("donations.category")}</Label>
-                  <Input
-                    id="edit-category"
-                    name="category"
-                    defaultValue={editingDonation?.category || ""}
-                  />
+                  <Input id="edit-category" name="category" defaultValue={editingDonation?.category || ""} />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="edit-payment_method">{t("donations.paymentMethod")}</Label>
                   <Select value={editPaymentMethod} onValueChange={setEditPaymentMethod}>
-                    <SelectTrigger id="edit-payment_method">
-                      <SelectValue placeholder={t("donations.paymentMethod")} />
-                    </SelectTrigger>
+                    <SelectTrigger id="edit-payment_method"><SelectValue placeholder={t("donations.paymentMethod")} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="cash">{t("donations.paymentMethods.cash")}</SelectItem>
                       <SelectItem value="check">{t("donations.paymentMethods.check")}</SelectItem>
@@ -623,40 +823,26 @@ const Donations = () => {
                     </SelectContent>
                   </Select>
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="edit-donation_date">{t("donations.date")}</Label>
-                  <Input
-                    id="edit-donation_date"
-                    name="donation_date"
-                    type="date"
-                    defaultValue={editingDonation?.donation_date}
-                    required
-                  />
+                  <Input id="edit-donation_date" name="donation_date" type="date" defaultValue={editingDonation?.donation_date} required />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="edit-notes">{t("donations.notes")}</Label>
-                <Input
-                  id="edit-notes"
-                  name="notes"
-                  defaultValue={editingDonation?.notes || ""}
-                />
+                <Input id="edit-notes" name="notes" defaultValue={editingDonation?.notes || ""} />
               </div>
 
+              <AttachmentField />
+              {editingDonation?.attachment_url && !attachmentFile && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Paperclip className="h-3 w-3" /> {t("attachments.existing")}
+                </p>
+              )}
+
               <div className="flex justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditDialogOpen(false);
-                    setEditingDonation(null);
-                    setSelectedDonor("");
-                    setEditPaymentMethod("");
-                  }}
-                  disabled={isSubmitting}
-                >
+                <Button type="button" variant="outline" onClick={() => { setIsEditDialogOpen(false); setEditingDonation(null); setSelectedDonor(""); setEditPaymentMethod(""); setAttachmentFile(null); }} disabled={isSubmitting}>
                   {t("common.cancel")}
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>

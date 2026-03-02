@@ -17,6 +17,7 @@ export type Database = {
       donations: {
         Row: {
           amount: number
+          attachment_url: string | null
           category: string | null
           created_at: string
           donation_date: string
@@ -31,6 +32,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          attachment_url?: string | null
           category?: string | null
           created_at?: string
           donation_date?: string
@@ -45,6 +47,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          attachment_url?: string | null
           category?: string | null
           created_at?: string
           donation_date?: string
@@ -84,6 +87,7 @@ export type Database = {
       donors: {
         Row: {
           address: string | null
+          cpf_cnpj: string | null
           created_at: string
           email: string | null
           id: string
@@ -95,6 +99,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -106,6 +111,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -128,6 +134,7 @@ export type Database = {
       expenses: {
         Row: {
           amount: number
+          attachment_url: string | null
           category: Database["public"]["Enums"]["expense_category"]
           created_at: string
           description: string
@@ -142,6 +149,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          attachment_url?: string | null
           category?: Database["public"]["Enums"]["expense_category"]
           created_at?: string
           description: string
@@ -156,6 +164,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          attachment_url?: string | null
           category?: Database["public"]["Enums"]["expense_category"]
           created_at?: string
           description?: string
@@ -241,6 +250,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          church_cnpj: string | null
           church_name: string | null
           created_at: string
           full_name: string | null
@@ -248,6 +258,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          church_cnpj?: string | null
           church_name?: string | null
           created_at?: string
           full_name?: string | null
@@ -255,6 +266,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          church_cnpj?: string | null
           church_name?: string | null
           created_at?: string
           full_name?: string | null
