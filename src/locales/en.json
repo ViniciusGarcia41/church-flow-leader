@@ -23,7 +23,16 @@
     "monthRevenue": "Current month revenue",
     "expensesThisMonth": "Expenses this month",
     "monthExpenses": "Current month expenses",
-    "loadError": "Error loading data"
+    "loadError": "Error loading data",
+    "period": "Period",
+    "periodTotal": "All Time",
+    "periodYear": "This Year",
+    "periodMonth": "This Month",
+    "periodCustom": "Custom",
+    "annualChart": "Annual Financial Overview",
+    "chartRevenue": "Revenue",
+    "chartExpenses": "Expenses",
+    "chartBalance": "Balance"
   },
   "donations": {
     "title": "Donations",

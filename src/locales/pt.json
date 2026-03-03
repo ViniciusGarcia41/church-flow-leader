@@ -23,7 +23,16 @@
     "monthRevenue": "Receitas do mês atual",
     "expensesThisMonth": "Despesas este mês",
     "monthExpenses": "Gastos do mês atual",
-    "loadError": "Erro ao carregar dados"
+    "loadError": "Erro ao carregar dados",
+    "period": "Período",
+    "periodTotal": "Total",
+    "periodYear": "Este Ano",
+    "periodMonth": "Este Mês",
+    "periodCustom": "Personalizado",
+    "annualChart": "Evolução Financeira Anual",
+    "chartRevenue": "Receitas",
+    "chartExpenses": "Despesas",
+    "chartBalance": "Saldo"
   },
   "donations": {
     "title": "Doações",
