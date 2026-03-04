@@ -10,7 +10,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
 import FilterBar from "@/components/FilterBar";
-import { Plus, Trash2, FileDown, Pencil, Paperclip, Eye } from "lucide-react";
+import { Plus, Trash2, FileDown, Pencil, Paperclip, Eye, FileText, FileSpreadsheet, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -453,8 +454,8 @@ const Donations = () => {
     return t(typeKey);
   };
 
-  const exportToExcel = () => {
-    const data = donations.map((d) => ({
+  const exportToExcel = (dataSource: Donation[] = filteredDonations) => {
+    const data = dataSource.map((d) => ({
       [t("donations.date")]: formatDate(d.donation_date),
       [t("donations.type")]: getDonationTypeLabel(d.donation_type),
       [t("donations.amount")]: Number(d.amount),
@@ -471,17 +472,85 @@ const Donations = () => {
     toast.success(t("donations.exportSuccess"));
   };
 
+  const exportFilteredCSV = () => {
+    const headers = [t("donations.date"), t("donations.type"), t("donations.amount"), t("donations.donor"), t("donations.category"), t("donations.paymentMethod"), t("donations.notes")];
+    const rows = filteredDonations.map((d) => [
+      formatDate(d.donation_date),
+      getDonationTypeLabel(d.donation_type),
+      Number(d.amount).toString(),
+      d.donors?.name || t("donations.anonymous"),
+      d.category || "",
+      d.payment_method || "",
+      d.notes || "",
+    ]);
+    const csvContent = [headers, ...rows].map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `donations-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("filters.exportSuccess"));
+  };
+
+  const exportFilteredPDF = async () => {
+    const { data: profile } = await supabase.from("profiles").select("church_name, church_cnpj").eq("id", user?.id).single();
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const churchName = profile?.church_name || "ChurchLedger";
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(churchName, pageWidth / 2, 15, { align: "center" });
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text(t("donations.title"), pageWidth / 2, 23, { align: "center" });
+
+    const hasFilters = searchTerm || typeFilter !== "all" || dateFrom || dateTo;
+    if (hasFilters) {
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(`${t("filters.exportFiltered")} (${filteredDonations.length} ${t("import.records")})`, pageWidth / 2, 30, { align: "center" });
+      doc.setTextColor(0);
+    }
+
+    autoTable(doc, {
+      startY: hasFilters ? 35 : 30,
+      head: [[t("donations.date"), t("donations.type"), t("donations.donor"), t("donations.amount")]],
+      body: filteredDonations.map(d => [
+        formatDate(d.donation_date),
+        getDonationTypeLabel(d.donation_type),
+        d.donors?.name || t("donations.anonymous"),
+        formatCurrency(Number(d.amount)),
+      ]),
+      foot: [["", "", "Total:", formatCurrency(filteredTotal)]],
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    doc.save(`donations-${new Date().toISOString().split("T")[0]}.pdf`);
+    toast.success(t("filters.exportSuccess"));
+  };
+
   const totalDonations = donations.reduce((sum, d) => sum + Number(d.amount), 0);
 
   const filteredDonations = useMemo(() => {
     return donations.filter((donation) => {
       const searchLower = searchTerm.toLowerCase();
+      const typeLabel = getDonationTypeLabel(donation.donation_type).toLowerCase();
+      const amountStr = Number(donation.amount).toString();
+      const formattedAmount = formatCurrency(Number(donation.amount)).toLowerCase();
       const matchesSearch = !searchTerm || 
         donation.donation_type.toLowerCase().includes(searchLower) ||
+        typeLabel.includes(searchLower) ||
         (donation.category?.toLowerCase().includes(searchLower)) ||
         (donation.notes?.toLowerCase().includes(searchLower)) ||
         (donation.donors?.name?.toLowerCase().includes(searchLower)) ||
-        (donation.payment_method?.toLowerCase().includes(searchLower));
+        (donation.donors?.cpf_cnpj?.toLowerCase().includes(searchLower)) ||
+        (donation.payment_method?.toLowerCase().includes(searchLower)) ||
+        amountStr.includes(searchLower) ||
+        formattedAmount.includes(searchLower);
 
       const matchesType = typeFilter === "all" || donation.donation_type === typeFilter;
 
@@ -560,10 +629,29 @@ const Donations = () => {
             <p className="text-sm sm:text-base text-muted-foreground">{t("donations.subtitle")}</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={exportToExcel} variant="outline" className="gap-2 w-full sm:w-auto">
-              <FileDown className="h-4 w-4" />
-              <span className="sm:inline">{t("donations.exportExcel")}</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2 w-full sm:w-auto">
+                  <FileDown className="h-4 w-4" />
+                  {t("filters.export")}
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => exportToExcel()}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  {t("filters.exportExcel")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportFilteredCSV}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  {t("filters.exportCSV")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportFilteredPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  {t("filters.exportPDF")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setAttachmentFile(null); }}>
               <DialogTrigger asChild>
                 <Button className="gap-2 w-full sm:w-auto">

@@ -308,7 +308,13 @@
     "all": "All",
     "from": "From",
     "to": "To",
-    "noResults": "No results found"
+    "noResults": "No results found",
+    "export": "Export",
+    "exportExcel": "Export Excel",
+    "exportCSV": "Export CSV",
+    "exportPDF": "Export PDF",
+    "exportFiltered": "Filtered results",
+    "exportSuccess": "Export completed successfully!"
   },
   "profile": {
     "title": "Profile",
