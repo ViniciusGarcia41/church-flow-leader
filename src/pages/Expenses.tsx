@@ -10,7 +10,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
 import FilterBar from "@/components/FilterBar";
-import { Plus, Trash2, Pencil, FileDown, Paperclip, Eye } from "lucide-react";
+import { Plus, Trash2, Pencil, FileDown, Paperclip, Eye, FileText, FileSpreadsheet, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -309,8 +310,8 @@ const Expenses = () => {
 
   const getCategoryLabel = (category: string) => t(`expenses.categories.${category}` as const);
 
-  const exportToExcel = () => {
-    const data = expenses.map((e) => ({
+  const exportToExcel = (dataSource: Expense[] = filteredExpenses) => {
+    const data = dataSource.map((e) => ({
       [t("expenses.date")]: formatDate(e.expense_date),
       [t("expenses.description")]: e.description,
       [t("expenses.category")]: getCategoryLabel(e.category),
@@ -326,17 +327,84 @@ const Expenses = () => {
     toast.success(t("expenses.exportSuccess"));
   };
 
+  const exportFilteredCSV = () => {
+    const headers = [t("expenses.date"), t("expenses.description"), t("expenses.category"), t("expenses.amount"), t("expenses.vendor"), t("expenses.paymentMethod"), t("expenses.notes")];
+    const rows = filteredExpenses.map((e) => [
+      formatDate(e.expense_date),
+      e.description,
+      getCategoryLabel(e.category),
+      Number(e.amount).toString(),
+      e.vendor || "",
+      e.payment_method || "",
+      e.notes || "",
+    ]);
+    const csvContent = [headers, ...rows].map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `expenses-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("filters.exportSuccess"));
+  };
+
+  const exportFilteredPDF = async () => {
+    const { data: profile } = await supabase.from("profiles").select("church_name, church_cnpj").eq("id", user?.id).single();
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const churchName = profile?.church_name || "ChurchLedger";
+
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(churchName, pageWidth / 2, 15, { align: "center" });
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text(t("expenses.title"), pageWidth / 2, 23, { align: "center" });
+
+    const hasFilters = searchTerm || categoryFilter !== "all" || dateFrom || dateTo;
+    if (hasFilters) {
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(`${t("filters.exportFiltered")} (${filteredExpenses.length} ${t("import.records")})`, pageWidth / 2, 30, { align: "center" });
+      doc.setTextColor(0);
+    }
+
+    autoTable(doc, {
+      startY: hasFilters ? 35 : 30,
+      head: [[t("expenses.date"), t("expenses.description"), t("expenses.category"), t("expenses.amount")]],
+      body: filteredExpenses.map(e => [
+        formatDate(e.expense_date),
+        e.description,
+        getCategoryLabel(e.category),
+        formatCurrency(Number(e.amount)),
+      ]),
+      foot: [["", "", "Total:", formatCurrency(filteredTotal)]],
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [220, 38, 38] },
+    });
+
+    doc.save(`expenses-${new Date().toISOString().split("T")[0]}.pdf`);
+    toast.success(t("filters.exportSuccess"));
+  };
+
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((expense) => {
       const searchLower = searchTerm.toLowerCase();
+      const catLabel = getCategoryLabel(expense.category).toLowerCase();
+      const amountStr = Number(expense.amount).toString();
+      const formattedAmount = formatCurrency(Number(expense.amount)).toLowerCase();
       const matchesSearch = !searchTerm || 
         expense.description.toLowerCase().includes(searchLower) ||
         expense.category.toLowerCase().includes(searchLower) ||
+        catLabel.includes(searchLower) ||
         (expense.vendor?.toLowerCase().includes(searchLower)) ||
         (expense.notes?.toLowerCase().includes(searchLower)) ||
-        (expense.payment_method?.toLowerCase().includes(searchLower));
+        (expense.payment_method?.toLowerCase().includes(searchLower)) ||
+        amountStr.includes(searchLower) ||
+        formattedAmount.includes(searchLower);
       const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
       const expenseDate = new Date(expense.expense_date);
       const matchesDateFrom = !dateFrom || expenseDate >= new Date(dateFrom);
@@ -407,10 +475,29 @@ const Expenses = () => {
             <p className="text-sm sm:text-base text-muted-foreground">{t("expenses.subtitle")}</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={exportToExcel} variant="outline" className="gap-2 w-full sm:w-auto">
-              <FileDown className="h-4 w-4" />
-              <span className="sm:inline">{t("expenses.exportExcel")}</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2 w-full sm:w-auto">
+                  <FileDown className="h-4 w-4" />
+                  {t("filters.export")}
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => exportToExcel()}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  {t("filters.exportExcel")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportFilteredCSV}>
+                  <FileDown className="h-4 w-4 mr-2" />
+                  {t("filters.exportCSV")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportFilteredPDF}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  {t("filters.exportPDF")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setAttachmentFile(null); }}>
               <DialogTrigger asChild>
                 <Button className="gap-2 w-full sm:w-auto">
