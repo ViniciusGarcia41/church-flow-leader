@@ -1,121 +1,114 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/Navbar";
-import {
-  Upload,
-  FileSpreadsheet,
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  Eye,
-  Save,
-  X,
-} from "lucide-react";
+import { Loader2, Save, ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { processFile, ParsedRecord, ParseResult } from "@/utils/fileProcessor";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useCurrency } from "@/hooks/useCurrency";
+import { processFile, getExcelSheetNames } from "@/utils/parsers";
+import type { ParseResult, ParsedRecord } from "@/utils/parsers/types";
+import FileUploadZone from "@/components/import/FileUploadZone";
+import StepIndicator from "@/components/import/StepIndicator";
+import type { ImportStep } from "@/components/import/StepIndicator";
+import DataPreview from "@/components/import/DataPreview";
 
 const Import = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { formatCurrency } = useCurrency();
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
   const [editedRecords, setEditedRecords] = useState<ParsedRecord[]>([]);
-  const [step, setStep] = useState<"upload" | "preview" | "confirm">("upload");
+  const [step, setStep] = useState<ImportStep>("upload");
+  const [sheetNames, setSheetNames] = useState<string[]>([]);
+  const [selectedSheet, setSelectedSheet] = useState<string>("");
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (selectedFile.size > maxSize) {
-        toast.error(t("import.error"), {
-          description: "Max 10MB",
-        });
-        return;
-      }
-      setFile(selectedFile);
-      setParseResult(null);
-      setStep("upload");
+  const handleFileSelect = useCallback(async (f: File) => {
+    setFile(f);
+    setParseResult(null);
+    setEditedRecords([]);
+    setStep("upload");
+    setSheetNames([]);
+    setSelectedSheet("");
+
+    // Check if Excel with multiple sheets
+    const ext = f.name.split(".").pop()?.toLowerCase();
+    if (ext === "xlsx" || ext === "xls") {
+      try {
+        const names = await getExcelSheetNames(f);
+        if (names.length > 1) {
+          setSheetNames(names);
+          setSelectedSheet(names[0]);
+        }
+      } catch { /* ignore */ }
     }
-  };
+  }, []);
 
-  const handleProcessFile = async () => {
+  const handleFileClear = useCallback(() => {
+    setFile(null);
+    setParseResult(null);
+    setEditedRecords([]);
+    setStep("upload");
+    setSheetNames([]);
+    setSelectedSheet("");
+  }, []);
+
+  const handleProcess = async () => {
     if (!file) return;
-
     setLoading(true);
+    setStep("processing");
+
     try {
-      const result = await processFile(file);
+      const result = await processFile(file, selectedSheet || undefined);
       setParseResult(result);
       setEditedRecords(result.records);
       setStep("preview");
 
-      if (result.errors.length > 0) {
-        toast.warning(t("import.error"), {
-          description: `${result.errors.length} ${t("import.with")} ${t("import.errors")}`,
+      if (result.errors.length > 0 && result.records.length > 0) {
+        toast.warning(t("import.partialSuccess") || "Processado com avisos", {
+          description: `${result.records.length} ${t("import.records")} • ${result.errors.length} ${t("import.errors")}`,
         });
-      } else {
+      } else if (result.records.length > 0) {
         toast.success(t("import.processing"), {
           description: `${result.records.length} ${t("import.records")}`,
         });
+      } else {
+        toast.error(t("import.noRecords") || "Nenhum registro encontrado", {
+          description: result.errors[0]?.message || "",
+        });
       }
     } catch (error: any) {
-      toast.error(t("import.parseError"), {
-        description: error.message,
-      });
+      setStep("upload");
+      toast.error(t("import.parseError"), { description: error.message });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRecordChange = (
-    index: number,
-    field: keyof ParsedRecord,
-    value: any
-  ) => {
-    setEditedRecords((prev) => {
+  const handleRecordChange = useCallback((index: number, field: keyof ParsedRecord, value: any) => {
+    setEditedRecords(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [field]: value };
       return updated;
     });
-  };
+  }, []);
 
-  const handleRemoveRecord = (index: number) => {
-    setEditedRecords((prev) => prev.filter((_, i) => i !== index));
-  };
+  const handleRemoveRecord = useCallback((index: number) => {
+    setEditedRecords(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   const handleImport = async () => {
     if (!parseResult || !file || !user) return;
-
     setLoading(true);
+    setStep("confirm");
+
     try {
       const donationsToInsert = editedRecords
-        .filter((r) => r.type === "income")
-        .map((r) => ({
+        .filter(r => r.type === "income")
+        .map(r => ({
           user_id: user.id,
           amount: r.amount,
           donation_type: (r.category || "offering") as "tithe" | "offering" | "special_project" | "campaign",
@@ -126,8 +119,8 @@ const Import = () => {
         }));
 
       const expensesToInsert = editedRecords
-        .filter((r) => r.type === "expense")
-        .map((r) => ({
+        .filter(r => r.type === "expense")
+        .map(r => ({
           user_id: user.id,
           amount: r.amount,
           category: (r.category || "other") as "maintenance" | "utilities" | "salaries" | "events" | "missions" | "supplies" | "other",
@@ -137,37 +130,25 @@ const Import = () => {
           notes: r.notes,
         }));
 
-      // Insert donations
       let donationsInserted = 0;
       if (donationsToInsert.length > 0) {
-        const { error: donationsError } = await supabase
-          .from("donations")
-          .insert(donationsToInsert);
-
-        if (donationsError) throw donationsError;
+        const { error } = await supabase.from("donations").insert(donationsToInsert);
+        if (error) throw error;
         donationsInserted = donationsToInsert.length;
       }
 
-      // Insert expenses
       let expensesInserted = 0;
       if (expensesToInsert.length > 0) {
-        const { error: expensesError } = await supabase
-          .from("expenses")
-          .insert(expensesToInsert);
-
-        if (expensesError) throw expensesError;
+        const { error } = await supabase.from("expenses").insert(expensesToInsert);
+        if (error) throw error;
         expensesInserted = expensesToInsert.length;
       }
 
-      // Record import history
-      const totalAmount =
-        parseResult.totalIncome - parseResult.totalExpense;
-      const importType =
-        donationsInserted > 0 && expensesInserted > 0
-          ? "mixed"
-          : donationsInserted > 0
-          ? "donations"
-          : "expenses";
+      const totalAmount = editedRecords.filter(r => r.type === "income").reduce((s, r) => s + r.amount, 0)
+        - editedRecords.filter(r => r.type === "expense").reduce((s, r) => s + r.amount, 0);
+
+      const importType = donationsInserted > 0 && expensesInserted > 0 ? "mixed"
+        : donationsInserted > 0 ? "donations" : "expenses";
 
       await supabase.from("file_imports").insert([{
         user_id: user.id,
@@ -184,118 +165,75 @@ const Import = () => {
       }]);
 
       toast.success(t("import.success"), {
-        description: `${donationsInserted} ${t("import.imported")} + ${expensesInserted}`,
+        description: `${donationsInserted} ${t("import.incomeRecords") || "receitas"} + ${expensesInserted} ${t("import.expenseRecords") || "despesas"}`,
       });
 
-      // Reset state
-      setFile(null);
-      setParseResult(null);
-      setEditedRecords([]);
-      setStep("upload");
+      handleFileClear();
     } catch (error: any) {
-      toast.error(t("import.saveError"), {
-        description: error.message,
-      });
+      setStep("preview");
+      toast.error(t("import.saveError"), { description: error.message });
     } finally {
       setLoading(false);
     }
   };
 
-
-  const getTypeBadgeVariant = (type: string) => {
-    if (type === "income") return "default";
-    if (type === "expense") return "destructive";
-    return "secondary";
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto p-6 space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold">{t("import.title")}</h1>
-          <p className="text-muted-foreground">
-            {t("import.subtitle")}
-          </p>
+      <div className="container mx-auto p-4 sm:p-6 space-y-6 max-w-5xl">
+        {/* Header */}
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold text-foreground">{t("import.title")}</h1>
+          <p className="text-muted-foreground">{t("import.subtitle")}</p>
         </div>
 
-        {step === "upload" && (
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                {t("import.upload")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <Label htmlFor="file" className="text-sm font-medium text-muted-foreground block mb-4">
-                      {t("import.supported")}
-                    </Label>
-                    <Input
-                      id="file"
-                      type="file"
-                      accept=".xlsx,.xls,.csv,.pdf"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <Label
-                      htmlFor="file"
-                      className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border-2 border-dashed border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 h-12 px-6 w-full max-w-md mx-auto shadow-sm"
-                    >
-                      <Upload className="h-5 w-5" />
-                      {t("import.chooseFile")}
-                    </Label>
-                    {file && (
-                      <p className="text-sm text-muted-foreground mt-3 font-medium">
-                        {file.name}
-                      </p>
-                    )}
-                  </div>
+        {/* Step indicator */}
+        <StepIndicator currentStep={step} hasErrors={parseResult ? parseResult.errors.length > 0 && parseResult.records.length === 0 : false} />
+
+        {/* Upload step */}
+        {(step === "upload" || step === "processing") && (
+          <Card>
+            <CardContent className="p-6 space-y-6">
+              <FileUploadZone file={file} onFileSelect={handleFileSelect} onFileClear={handleFileClear} />
+
+              {/* Sheet selector for Excel */}
+              {sheetNames.length > 1 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">{t("import.selectSheet") || "Selecionar aba da planilha"}</label>
+                  <Select value={selectedSheet} onValueChange={setSelectedSheet}>
+                    <SelectTrigger className="w-full max-w-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sheetNames.map(name => (
+                        <SelectItem key={name} value={name}>{name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              )}
 
-                {file && (
-                  <Alert>
-                    <FileSpreadsheet className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="space-y-1">
-                        <p className="font-semibold">{file.name}</p>
-                        <p className="text-sm">
-                          {t("import.fileSize")}: {(file.size / 1024).toFixed(2)} KB
-                        </p>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                )}
+              {file && (
+                <div className="flex justify-center">
+                  <Button onClick={handleProcess} disabled={loading} size="lg" className="min-w-[220px]">
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        {t("import.processingFile")}
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        {t("import.processAndView")}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
 
-                {file && (
-                  <div className="flex justify-center">
-                    <Button
-                      onClick={handleProcessFile}
-                      disabled={!file || loading}
-                      className="w-full max-w-md h-11"
-                      size="lg"
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          {t("import.processingFile")}
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="h-4 w-4 mr-2" />
-                          {t("import.processAndView")}
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </div>
-
+              {/* How it works */}
               <div className="border-t pt-6">
-                <h3 className="font-semibold mb-3">{t("import.howItWorks")}</h3>
+                <h3 className="font-semibold text-foreground mb-3">{t("import.howItWorks")}</h3>
                 <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
                   <li>{t("import.step1")}</li>
                   <li>{t("import.step2")}</li>
@@ -308,218 +246,41 @@ const Import = () => {
           </Card>
         )}
 
+        {/* Preview step */}
         {step === "preview" && parseResult && (
-          <div className="space-y-6">
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    {t("import.viewData")}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setStep("upload");
-                      setParseResult(null);
-                      setEditedRecords([]);
-                    }}
-                  >
-                    {t("import.upload")}
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-green-50 dark:bg-green-950 p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      {t("import.totalIncome")}
-                    </p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {formatCurrency(parseResult.totalIncome)}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {editedRecords.filter((r) => r.type === "income").length}{" "}
-                      {t("import.recordsPlural")}
-                    </p>
-                  </div>
-                  <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      {t("import.totalExpenses")}
-                    </p>
-                    <p className="text-2xl font-bold text-red-600">
-                      {formatCurrency(parseResult.totalExpense)}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {editedRecords.filter((r) => r.type === "expense").length}{" "}
-                      {t("import.recordsPlural")}
-                    </p>
-                  </div>
-                  <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground">{t("import.balance")}</p>
-                    <p
-                      className={`text-2xl font-bold ${
-                        parseResult.totalIncome - parseResult.totalExpense >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {formatCurrency(
-                        parseResult.totalIncome - parseResult.totalExpense
-                      )}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {editedRecords.length} {t("import.totalRecords")}
-                    </p>
-                  </div>
-                </div>
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold">{t("import.viewData")}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <DataPreview
+                result={parseResult}
+                records={editedRecords}
+                onRecordChange={handleRecordChange}
+                onRemoveRecord={handleRemoveRecord}
+              />
 
-                {parseResult.errors.length > 0 && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      <p className="font-semibold mb-2">
-                        {parseResult.errors.length} {t("import.errorsFound")}
-                      </p>
-                      <ul className="text-sm space-y-1">
-                        {parseResult.errors.slice(0, 5).map((err, i) => (
-                          <li key={i}>
-                            {t("import.date")} {err.row}: {err.message}
-                          </li>
-                        ))}
-                        {parseResult.errors.length > 5 && (
-                          <li>... {t("import.andMore")} {parseResult.errors.length - 5}</li>
-                        )}
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t("import.date")}</TableHead>
-                        <TableHead>{t("import.type")}</TableHead>
-                        <TableHead>{t("import.description")}</TableHead>
-                        <TableHead>{t("import.amount")}</TableHead>
-                        <TableHead>{t("import.category")}</TableHead>
-                        <TableHead className="text-right">{t("import.actions")}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {editedRecords.map((record, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Input
-                              type="date"
-                              value={record.date}
-                              onChange={(e) =>
-                                handleRecordChange(index, "date", e.target.value)
-                              }
-                              className="w-36"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={record.type}
-                              onValueChange={(value) =>
-                                handleRecordChange(index, "type", value)
-                              }
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="income">{t("import.income")}</SelectItem>
-                                <SelectItem value="expense">{t("import.expense")}</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={record.description}
-                              onChange={(e) =>
-                                handleRecordChange(
-                                  index,
-                                  "description",
-                                  e.target.value
-                                )
-                              }
-                              className="min-w-[200px]"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={record.amount}
-                              onChange={(e) =>
-                                handleRecordChange(
-                                  index,
-                                  "amount",
-                                  parseFloat(e.target.value)
-                                )
-                              }
-                              className="w-32"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={getTypeBadgeVariant(record.type)}>
-                              {record.category || "N/A"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveRecord(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => {
-                      setStep("upload");
-                      setParseResult(null);
-                      setEditedRecords([]);
-                    }}
-                    className="w-full sm:w-auto min-w-[180px]"
-                  >
-                    {t("import.upload")}
-                  </Button>
-                  <Button 
-                    onClick={handleImport} 
-                    disabled={loading || editedRecords.length === 0}
-                    size="lg"
-                    className="w-full sm:w-auto min-w-[200px]"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {t("import.confirming")}
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        {t("import.confirm")} ({editedRecords.length})
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <div className="flex flex-col sm:flex-row justify-center gap-3">
+                <Button variant="outline" onClick={handleFileClear} className="min-w-[160px]">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {t("import.upload")}
+                </Button>
+                <Button onClick={handleImport} disabled={loading || editedRecords.length === 0} className="min-w-[200px]">
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {t("import.confirming")}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      {t("import.confirm")} ({editedRecords.length})
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
