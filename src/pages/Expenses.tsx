@@ -43,6 +43,7 @@ const Expenses = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
+  const [newPaymentMethod, setNewPaymentMethod] = useState<string>("");
   const [editPaymentMethod, setEditPaymentMethod] = useState<string>("");
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [viewAttachmentUrl, setViewAttachmentUrl] = useState<string | null>(null);
@@ -105,7 +106,7 @@ const Expenses = () => {
       description: formData.get("description") as string,
       amount: parseFloat(formData.get("amount") as string),
       category: formData.get("category") as string,
-      payment_method: formData.get("payment_method") as string || null,
+      payment_method: newPaymentMethod ? getPaymentMethodLabel(newPaymentMethod) : null,
       vendor: formData.get("vendor") as string || null,
       notes: formData.get("notes") as string || null,
       expense_date: formData.get("expense_date") as string,
@@ -122,6 +123,7 @@ const Expenses = () => {
 
       toast.success(t("expenses.success"));
       setIsDialogOpen(false);
+      setNewPaymentMethod("");
       setAttachmentFile(null);
       fetchExpenses();
       e.currentTarget.reset();
@@ -544,7 +546,18 @@ const Expenses = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="payment_method">{t("expenses.paymentMethod")}</Label>
-                    <Input id="payment_method" name="payment_method" type="text" placeholder={t("common.paymentMethodPlaceholder")} disabled={isSubmitting} />
+                    <Select value={newPaymentMethod} onValueChange={setNewPaymentMethod} disabled={isSubmitting}>
+                      <SelectTrigger id="payment_method"><SelectValue placeholder={t("expenses.paymentMethod")} /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">{t("expenses.paymentMethods.cash")}</SelectItem>
+                        <SelectItem value="check">{t("expenses.paymentMethods.check")}</SelectItem>
+                        <SelectItem value="bank_transfer">{t("expenses.paymentMethods.bank_transfer")}</SelectItem>
+                        <SelectItem value="credit_card">{t("expenses.paymentMethods.credit_card")}</SelectItem>
+                        <SelectItem value="debit_card">{t("expenses.paymentMethods.debit_card")}</SelectItem>
+                        <SelectItem value="pix">{t("expenses.paymentMethods.pix")}</SelectItem>
+                        <SelectItem value="other">{t("expenses.paymentMethods.other")}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

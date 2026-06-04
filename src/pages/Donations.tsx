@@ -50,6 +50,7 @@ const Donations = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
   const [selectedDonor, setSelectedDonor] = useState<string>("");
+  const [newPaymentMethod, setNewPaymentMethod] = useState<string>("");
   const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -151,7 +152,7 @@ const Donations = () => {
       amount: parseFloat(formData.get("amount") as string),
       donation_type: formData.get("donation_type") as "tithe" | "offering" | "special_project" | "campaign",
       category: formData.get("category") as string || null,
-      payment_method: formData.get("payment_method") as string || null,
+      payment_method: newPaymentMethod ? getPaymentMethodLabel(newPaymentMethod) : null,
       notes: formData.get("notes") as string || null,
       donation_date: formData.get("donation_date") as string,
     };
@@ -168,6 +169,7 @@ const Donations = () => {
       toast.success(t("donations.success"));
       setIsDialogOpen(false);
       setSelectedDonor("");
+      setNewPaymentMethod("");
       setIsRecurring(false);
       setAttachmentFile(null);
       fetchDonations();
@@ -707,7 +709,18 @@ const Donations = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="payment_method">{t("donations.paymentMethod")}</Label>
-                    <Input id="payment_method" name="payment_method" type="text" placeholder={t("common.paymentMethodPlaceholder")} disabled={isSubmitting} />
+                    <Select value={newPaymentMethod} onValueChange={setNewPaymentMethod} disabled={isSubmitting}>
+                      <SelectTrigger id="payment_method"><SelectValue placeholder={t("donations.paymentMethod")} /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">{t("donations.paymentMethods.cash")}</SelectItem>
+                        <SelectItem value="check">{t("donations.paymentMethods.check")}</SelectItem>
+                        <SelectItem value="bank_transfer">{t("donations.paymentMethods.bank_transfer")}</SelectItem>
+                        <SelectItem value="credit_card">{t("donations.paymentMethods.credit_card")}</SelectItem>
+                        <SelectItem value="debit_card">{t("donations.paymentMethods.debit_card")}</SelectItem>
+                        <SelectItem value="pix">{t("donations.paymentMethods.pix")}</SelectItem>
+                        <SelectItem value="other">{t("donations.paymentMethods.other")}</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

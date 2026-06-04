@@ -1,81 +1,99 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LogOut, LayoutDashboard, Heart, CreditCard, Users, FileText, Upload, Languages, Menu } from "lucide-react";
+import {
+  LogOut, LayoutDashboard, Heart, CreditCard, Users,
+  FileText, Upload, Languages, Menu, UserCircle,
+} from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import defaultChurchLogo from "@/assets/church-logo.jpeg";
 import { ThemeToggle } from "@/components/ThemeToggle";
+
+const LS_LOGO = "churchledger-logo";
+const LS_NAME = "churchledger-appname";
+
+const readFromStorage = () => ({
+  logo: localStorage.getItem(LS_LOGO) ?? null,
+  name: localStorage.getItem(LS_NAME) ?? null,
+});
 
 const Navbar = () => {
   const { user, signOut } = useAuth();
   const { t, toggleLanguage } = useLanguage();
-  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [churchLogo, setChurchLogo] = useState(defaultChurchLogo);
-  const [appName, setAppName] = useState("ChurchLedger");
+  const [churchLogo, setChurchLogo] = useState(() => {
+    const saved = localStorage.getItem(LS_LOGO);
+    return saved ?? defaultChurchLogo;
+  });
+  const [appName, setAppName] = useState(() => {
+    return localStorage.getItem(LS_NAME) ?? "ChurchLedger";
+  });
 
-  useEffect(() => {
-    const savedLogo = localStorage.getItem("churchledger-logo");
-    if (savedLogo) setChurchLogo(savedLogo);
-    const savedAppName = localStorage.getItem("churchledger-appname");
-    if (savedAppName) setAppName(savedAppName);
-
-    const handleStorageChange = () => {
-      const updatedLogo = localStorage.getItem("churchledger-logo");
-      if (updatedLogo) setChurchLogo(updatedLogo);
-      const updatedAppName = localStorage.getItem("churchledger-appname");
-      if (updatedAppName) setAppName(updatedAppName);
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+  const syncFromStorage = useCallback(() => {
+    const { logo, name } = readFromStorage();
+    setChurchLogo(logo ?? defaultChurchLogo);
+    setAppName(name ?? "ChurchLedger");
   }, []);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth");
-  };
+  useEffect(() => {
+    // cross-tab updates
+    window.addEventListener("storage", syncFromStorage);
+    // same-tab updates dispatched from Profile page
+    window.addEventListener("churchledger-profile-updated", syncFromStorage);
+    return () => {
+      window.removeEventListener("storage", syncFromStorage);
+      window.removeEventListener("churchledger-profile-updated", syncFromStorage);
+    };
+  }, [syncFromStorage]);
 
   if (!user) return null;
 
+  const close = () => setIsOpen(false);
+
   const NavLinks = () => (
     <>
-      <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+      <Link to="/dashboard" onClick={close}>
         <Button variant="ghost" size="sm" className="gap-2 w-full justify-start">
           <LayoutDashboard className="h-4 w-4" />
           {t("nav.dashboard")}
         </Button>
       </Link>
-      <Link to="/donations" onClick={() => setIsOpen(false)}>
+      <Link to="/donations" onClick={close}>
         <Button variant="ghost" size="sm" className="gap-2 w-full justify-start">
           <Heart className="h-4 w-4" />
           {t("nav.donations")}
         </Button>
       </Link>
-      <Link to="/donors" onClick={() => setIsOpen(false)}>
+      <Link to="/donors" onClick={close}>
         <Button variant="ghost" size="sm" className="gap-2 w-full justify-start">
           <Users className="h-4 w-4" />
           {t("nav.donors")}
         </Button>
       </Link>
-      <Link to="/expenses" onClick={() => setIsOpen(false)}>
+      <Link to="/expenses" onClick={close}>
         <Button variant="ghost" size="sm" className="gap-2 w-full justify-start">
           <CreditCard className="h-4 w-4" />
           {t("nav.expenses")}
         </Button>
       </Link>
-      <Link to="/reports" onClick={() => setIsOpen(false)}>
+      <Link to="/reports" onClick={close}>
         <Button variant="ghost" size="sm" className="gap-2 w-full justify-start">
           <FileText className="h-4 w-4" />
           {t("nav.reports")}
         </Button>
       </Link>
-      <Link to="/import" onClick={() => setIsOpen(false)}>
+      <Link to="/import" onClick={close}>
         <Button variant="ghost" size="sm" className="gap-2 w-full justify-start">
           <Upload className="h-4 w-4" />
           {t("nav.import")}
+        </Button>
+      </Link>
+      <Link to="/profile" onClick={close}>
+        <Button variant="ghost" size="sm" className="gap-2 w-full justify-start">
+          <UserCircle className="h-4 w-4" />
+          {t("nav.profile")}
         </Button>
       </Link>
       <Button variant="ghost" size="sm" onClick={toggleLanguage} className="gap-2 w-full justify-start">
@@ -85,7 +103,12 @@ const Navbar = () => {
       <div className="w-full">
         <ThemeToggle />
       </div>
-      <Button variant="outline" size="sm" onClick={() => { handleSignOut(); setIsOpen(false); }} className="gap-2 w-full justify-start">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => { signOut(); close(); }}
+        className="gap-2 w-full justify-start"
+      >
         <LogOut className="h-4 w-4" />
         {t("nav.signout")}
       </Button>
@@ -104,12 +127,10 @@ const Navbar = () => {
           <span className="text-xl font-bold hidden md:inline truncate">{appName}</span>
         </Link>
 
-        {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-2 ml-auto">
           <NavLinks />
         </div>
 
-        {/* Mobile and Tablet Navigation */}
         <div className="flex items-center gap-2 lg:hidden ml-auto">
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>

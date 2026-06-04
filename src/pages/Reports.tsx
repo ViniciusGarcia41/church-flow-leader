@@ -94,44 +94,50 @@ const Reports = () => {
     }
 
     try {
+      const isPt = language === "pt";
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.width;
 
-      // Título
       doc.setFontSize(18);
       doc.setFont("helvetica", "bold");
-      doc.text("Relatório Financeiro Mensal", pageWidth / 2, 20, { align: "center" });
+      doc.text(
+        isPt ? "Relatório Financeiro" : "Financial Report",
+        pageWidth / 2, 20, { align: "center" }
+      );
 
-      // Período
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      doc.text(`Período: ${formatDate(startDate)} a ${formatDate(endDate)}`, pageWidth / 2, 28, {
-        align: "center",
-      });
+      doc.text(
+        `${isPt ? "Período" : "Period"}: ${formatDate(startDate)} ${isPt ? "a" : "to"} ${formatDate(endDate)}`,
+        pageWidth / 2, 28, { align: "center" }
+      );
 
-      // Resumo
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
-      doc.text("Resumo Financeiro", 14, 40);
+      doc.text(isPt ? "Resumo Financeiro" : "Financial Summary", 14, 40);
 
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
-      doc.text(`Total de Receitas: ${formatCurrency(data.totalDonations)}`, 14, 48);
-      doc.text(`Total de Despesas: ${formatCurrency(data.totalExpenses)}`, 14, 55);
+      doc.text(`${isPt ? "Total de Receitas" : "Total Revenue"}: ${formatCurrency(data.totalDonations)}`, 14, 48);
+      doc.text(`${isPt ? "Total de Despesas" : "Total Expenses"}: ${formatCurrency(data.totalExpenses)}`, 14, 55);
 
       doc.setFont("helvetica", "bold");
       const balanceColor = data.balance >= 0 ? [34, 197, 94] : [239, 68, 68];
       doc.setTextColor(balanceColor[0], balanceColor[1], balanceColor[2]);
-      doc.text(`Saldo: ${formatCurrency(data.balance)}`, 14, 62);
+      doc.text(`${isPt ? "Saldo" : "Balance"}: ${formatCurrency(data.balance)}`, 14, 62);
       doc.setTextColor(0, 0, 0);
 
-      // Tabela de Doações
       doc.setFont("helvetica", "bold");
-      doc.text("Receitas (Doações)", 14, 75);
+      doc.text(isPt ? "Receitas (Doações)" : "Revenue (Donations)", 14, 75);
 
       autoTable(doc, {
         startY: 78,
-        head: [["Data", "Tipo", "Valor", "Doador"]],
+        head: [[
+          isPt ? "Data" : "Date",
+          isPt ? "Tipo" : "Type",
+          isPt ? "Valor" : "Amount",
+          isPt ? "Doador" : "Donor",
+        ]],
         body: data.donations.map((d) => [
           formatDate(d.donation_date),
           getDonationTypeLabel(d.donation_type),
@@ -143,14 +149,18 @@ const Reports = () => {
         styles: { fontSize: 9 },
       });
 
-      // Tabela de Despesas
       const finalY = (doc as any).lastAutoTable.finalY || 78;
       doc.setFont("helvetica", "bold");
       doc.text(t("nav.expenses"), 14, finalY + 15);
 
       autoTable(doc, {
         startY: finalY + 18,
-        head: [["Data", "Categoria", "Descrição", "Valor"]],
+        head: [[
+          isPt ? "Data" : "Date",
+          isPt ? "Categoria" : "Category",
+          isPt ? "Descrição" : "Description",
+          isPt ? "Valor" : "Amount",
+        ]],
         body: data.expenses.map((e) => [
           formatDate(e.expense_date),
           getCategoryLabel(e.category),
@@ -162,21 +172,20 @@ const Reports = () => {
         styles: { fontSize: 9 },
       });
 
-      // Rodapé
       const pageCount = doc.getNumberOfPages();
       doc.setFontSize(8);
       doc.setFont("helvetica", "normal");
+      const locale = isPt ? "pt-BR" : "en-US";
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         const pageHeight = doc.internal.pageSize.height;
-        doc.text(`Página ${i} de ${pageCount}`, pageWidth / 2, pageHeight - 10, {
-          align: "center",
-        });
         doc.text(
-          `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
-          pageWidth - 14,
-          pageHeight - 10,
-          { align: "right" }
+          `${isPt ? "Página" : "Page"} ${i} ${isPt ? "de" : "of"} ${pageCount}`,
+          pageWidth / 2, pageHeight - 10, { align: "center" }
+        );
+        doc.text(
+          `${isPt ? "Gerado em" : "Generated on"}: ${new Date().toLocaleString(locale)}`,
+          pageWidth - 14, pageHeight - 10, { align: "right" }
         );
       }
 
@@ -198,23 +207,30 @@ const Reports = () => {
     }
 
     try {
+      const isPt = language === "pt";
       const wb = XLSX.utils.book_new();
 
-      // Planilha de Resumo
       const summaryData = [
-        ["Relatório Financeiro Mensal"],
-        [`Período: ${formatDate(startDate)} a ${formatDate(endDate)}`],
+        [isPt ? "Relatório Financeiro" : "Financial Report"],
+        [`${isPt ? "Período" : "Period"}: ${formatDate(startDate)} ${isPt ? "a" : "to"} ${formatDate(endDate)}`],
         [],
-        ["Total de Receitas", formatCurrency(data.totalDonations)],
-        ["Total de Despesas", formatCurrency(data.totalExpenses)],
-        ["Saldo", formatCurrency(data.balance)],
+        [isPt ? "Total de Receitas" : "Total Revenue", formatCurrency(data.totalDonations)],
+        [isPt ? "Total de Despesas" : "Total Expenses", formatCurrency(data.totalExpenses)],
+        [isPt ? "Saldo" : "Balance", formatCurrency(data.balance)],
       ];
       const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-      XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
+      XLSX.utils.book_append_sheet(wb, wsSummary, isPt ? "Resumo" : "Summary");
 
-      // Planilha de Doações
       const donationsData = [
-        ["Data", "Tipo", "Valor", "Doador", "Categoria", "Forma de Pagamento", "Observações"],
+        [
+          isPt ? "Data" : "Date",
+          isPt ? "Tipo" : "Type",
+          isPt ? "Valor" : "Amount",
+          isPt ? "Doador" : "Donor",
+          isPt ? "Categoria" : "Category",
+          isPt ? "Forma de Pagamento" : "Payment Method",
+          isPt ? "Observações" : "Notes",
+        ],
         ...data.donations.map((d) => [
           formatDate(d.donation_date),
           getDonationTypeLabel(d.donation_type),
@@ -228,9 +244,16 @@ const Reports = () => {
       const wsDonations = XLSX.utils.aoa_to_sheet(donationsData);
       XLSX.utils.book_append_sheet(wb, wsDonations, t("nav.donations"));
 
-      // Planilha de Despesas
       const expensesData = [
-        ["Data", "Categoria", "Descrição", "Valor", "Fornecedor", "Forma de Pagamento", "Observações"],
+        [
+          isPt ? "Data" : "Date",
+          isPt ? "Categoria" : "Category",
+          isPt ? "Descrição" : "Description",
+          isPt ? "Valor" : "Amount",
+          isPt ? "Fornecedor" : "Vendor",
+          isPt ? "Forma de Pagamento" : "Payment Method",
+          isPt ? "Observações" : "Notes",
+        ],
         ...data.expenses.map((e) => [
           formatDate(e.expense_date),
           getCategoryLabel(e.category),

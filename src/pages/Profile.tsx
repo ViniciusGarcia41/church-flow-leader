@@ -79,7 +79,7 @@ const Profile = () => {
 
       const nameToSave = appName.trim() || "ChurchLedger";
       localStorage.setItem("churchledger-appname", nameToSave);
-      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("churchledger-profile-updated"));
 
       toast.success(t("profile.updateSuccess"));
     } catch (error) {
@@ -154,7 +154,7 @@ const Profile = () => {
         setPreviewLogo(null);
         setCrop({ x: 0, y: 0 });
         setZoom(1);
-        window.dispatchEvent(new Event("storage"));
+        window.dispatchEvent(new Event("churchledger-profile-updated"));
       } catch (error) {
         console.error("Erro ao cortar imagem:", error);
         toast.error("Erro ao processar imagem");

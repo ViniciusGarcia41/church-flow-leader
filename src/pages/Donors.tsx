@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrency } from "@/hooks/useCurrency";
 import Navbar from "@/components/Navbar";
-import { Plus, Trash2, User, FileText, Pencil } from "lucide-react";
+import { Plus, Trash2, User, FileText, Pencil, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -41,6 +41,7 @@ const Donors = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [donorToDelete, setDonorToDelete] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (user) fetchDonors();
@@ -209,7 +210,7 @@ const Donors = () => {
       const total = (donations || []).reduce((sum, d) => sum + Number(d.amount), 0);
       yPos += 3;
       doc.setFont("helvetica", "bold");
-      doc.text(`Total: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(total)}`, 14, yPos);
+      doc.text(`Total: ${formatCurrency(total)}`, 14, yPos);
       yPos += 5;
 
       autoTable(doc, {
@@ -227,7 +228,7 @@ const Donors = () => {
             : d.donation_type === "offering" ? (language === "pt" ? "Oferta" : "Offering")
             : d.donation_type === "special_project" ? (language === "pt" ? "Projeto Especial" : "Special Project")
             : (language === "pt" ? "Campanha" : "Campaign"),
-          new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(d.amount)),
+          formatCurrency(Number(d.amount)),
           d.category || "-",
           d.payment_method || "-",
         ]),
@@ -245,6 +246,20 @@ const Donors = () => {
       toast.error(t("donors.receiptError"), { description: error.message });
     }
   };
+
+  const filteredDonors = useMemo(() => {
+    if (!searchTerm.trim()) return donors;
+    const lower = searchTerm.toLowerCase();
+    return donors.filter(
+      (d) =>
+        d.name.toLowerCase().includes(lower) ||
+        (d.email?.toLowerCase().includes(lower)) ||
+        (d.phone?.toLowerCase().includes(lower)) ||
+        (d.cpf_cnpj?.toLowerCase().includes(lower)) ||
+        (d.address?.toLowerCase().includes(lower)) ||
+        (d.notes?.toLowerCase().includes(lower)),
+    );
+  }, [donors, searchTerm]);
 
   if (loading) {
     return (
@@ -317,16 +332,44 @@ const Donors = () => {
           </Dialog>
         </div>
 
+        {/* Search bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="pl-10 pr-10"
+            placeholder={t("filters.searchPlaceholder")}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={() => setSearchTerm("")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
         <Card className="shadow-lg">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>{t("donors.list")}</CardTitle>
+            {searchTerm && (
+              <span className="text-sm text-muted-foreground">
+                {filteredDonors.length} {t("import.records")}
+              </span>
+            )}
           </CardHeader>
           <CardContent>
             {donors.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">{t("donors.none")}</p>
+            ) : filteredDonors.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">{t("filters.noResults")}</p>
             ) : (
               <div className="space-y-3">
-                {donors.map((donor) => (
+                {filteredDonors.map((donor) => (
                   <div key={donor.id} className="flex flex-col gap-4 p-4 sm:p-5 rounded-lg border border-border hover:bg-muted/50 transition-colors w-full">
                     <div className="flex items-start gap-3 sm:gap-4 w-full">
                       <div className="h-12 w-12 flex-shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
